@@ -1,0 +1,69 @@
+#ifndef TINY_SYSTEM_H
+#define TINY_SYSTEM_H
+
+#include <assert.h>
+#include <limits>
+#include <limits.h>
+#include <string>
+#include <cstdint>
+
+#ifdef TINY3D_ASSERT
+	#undef TINY3D_ASSERT
+#endif
+
+#ifdef TINY3D_DEBUG
+	#define TINY3D_ASSERT(x) assert(x)
+#else
+	#define TINY3D_ASSERT(x)
+#endif
+
+namespace tiny3d
+{
+
+class Image;
+class Real;
+
+typedef uint64_t UXInt;
+typedef int64_t  SXInt;
+typedef uint32_t UInt;
+typedef int32_t  SInt;
+typedef UInt     Word;
+typedef uint16_t UHInt;
+typedef int16_t  SHInt;
+typedef uint8_t  Byte;
+
+namespace System
+{
+	bool Init(int width, int height, const std::string &caption);
+	void Close( void );
+	Real Time( void );
+
+	namespace Video
+	{
+		void Blit(const Image &src);
+		void Update( void );
+		int  Width( void );
+		int  Height( void );
+	}
+
+	namespace Audio
+	{
+	}
+
+	namespace Input
+	{
+		// Touch
+		// Controller
+		// Keyboard
+	}
+};
+
+}
+
+#define TINY3D_BITS_PER_BYTE            (CHAR_BIT * sizeof(Byte))
+#define TINY3D_BITS_PER_WORD            (CHAR_BIT * sizeof(Word))
+#define TINY3D_BYTE_MAX                 std::numeric_limits<Byte>::max()
+#define TINY3D_BITS_PER_COLOR_CHANNEL   5
+#define TINY3D_SHADES_PER_COLOR_CHANNEL 32
+
+#endif // TINY_SYSTEM_H
