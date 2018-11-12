@@ -27,7 +27,7 @@ bool  IsPow2(UInt x);
 UInt  Interleave16Bits(UHInt a, UHInt b);
 UHInt Interleave8Bits(Byte a, Byte b);
 
-class Random
+/*class Random
 {
 private:
 	mutable tiny3d::UXInt m_old_state;
@@ -41,7 +41,7 @@ public:
 	Random( void );
 	explicit Random(tiny3d::UXInt state, tiny3d::UXInt inc = 1);
 	explicit operator UInt( void ) const;
-};
+};*/
 
 // if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
 class Real
@@ -147,6 +147,7 @@ SInt  Trunc(Real r);
 SInt  Round(Real r);
 SInt  Ceil(Real r);
 SInt  Floor(Real r);
+template < typename type_t > type_t Lerp(const type_t &a, const type_t &b, Real x) { return a + (b - a) * x; }
 
 class Vector3
 {

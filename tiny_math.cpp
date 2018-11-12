@@ -106,7 +106,7 @@ tiny3d::UHInt tiny3d::Interleave8Bits(tiny3d::Byte a, tiny3d::Byte b)
 	return UHInt(x | (y << 1));
 }
 
-tiny3d::UInt tiny3d::Random::Roll( void ) const
+/*tiny3d::UInt tiny3d::Random::Roll( void ) const
 {	
 	UXInt oldstate = m_state;
 	// Advance internal state
@@ -128,7 +128,7 @@ tiny3d::Random::Random(UXInt state, UXInt inc) : m_state(state), m_inc(inc)
 tiny3d::Random::operator tiny3d::UInt( void ) const
 {
 	return Roll();
-}
+}*/
 
 tiny3d::SXInt tiny3d::Real::InfBits( void )
 {
