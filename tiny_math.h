@@ -281,6 +281,30 @@ Matrix2x2 operator*(const Matrix2x2 &l, Matrix2x2 r);
 Matrix2x2 operator*(const Matrix2x2 &l, Real r);
 Vector2   operator*(const Vector2 &l, const Matrix2x2 &r);
 
+class Matrix4x4
+{
+private:
+	Real m[4][4];
+
+private:
+	static Real Dot(const Real *l, const Real *r);
+
+public:
+	Matrix4x4( void );
+	Matrix4x4(Real xx, Real xy, Real xz, Real xw, Real yx, Real yy, Real yz, Real yw, Real zx, Real zy, Real zz, Real zw, Real wx, Real wy, Real wz, Real ww);
+
+	Real *operator[](UInt row);
+	const Real *operator[](UInt row) const;
+
+	Matrix4x4 operator*(Matrix4x4 r) const;
+	Matrix4x4 operator*(Real r) const;
+	Vector3   operator*(const Vector3 &r) const;
+};
+
+Matrix4x4 Identity4( void );
+Matrix4x4 Transp(const Matrix4x4 &m);
+Matrix4x4 Inv(const Matrix4x4 &m);
+
 }
 
 #endif // TINY_MATH_H

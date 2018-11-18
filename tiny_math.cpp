@@ -1006,3 +1006,81 @@ tiny3d::Vector2 tiny3d::operator*(const tiny3d::Vector2 &l, const tiny3d::Matrix
 		tiny3d::Dot(l, r.y)
 	);
 }
+
+tiny3d::Real tiny3d::Matrix4x4::Dot(const tiny3d::Real *l, const tiny3d::Real *r)
+{
+	return l[0]*r[0] + l[1]*r[1] + l[2]*r[2] + l[3]*r[3];
+}
+
+tiny3d::Matrix4x4::Matrix4x4( void ) : m{ { Real(), Real(), Real(), Real() }, { Real(), Real(), Real(), Real() }, { Real(), Real(), Real(), Real() }, { Real(), Real(), Real(), Real() } }
+{}
+
+tiny3d::Matrix4x4::Matrix4x4(tiny3d::Real xx, tiny3d::Real xy, tiny3d::Real xz, tiny3d::Real xw, tiny3d::Real yx, tiny3d::Real yy, tiny3d::Real yz, tiny3d::Real yw, tiny3d::Real zx, tiny3d::Real zy, tiny3d::Real zz, tiny3d::Real zw, tiny3d::Real wx, tiny3d::Real wy, tiny3d::Real wz, tiny3d::Real ww) : m{ {xx, xy, xz, xw}, {yx, yy, yz, yw}, {zx, zy, zz, zw}, {wx, wy, wz, ww} }
+{}
+
+tiny3d::Real *tiny3d::Matrix4x4::operator[](tiny3d::UInt row)
+{
+	TINY3D_ASSERT(row < 4);
+	return m[row];
+}
+
+const tiny3d::Real *tiny3d::Matrix4x4::operator[](UInt row) const
+{
+	TINY3D_ASSERT(row < 4);
+	return m[row];
+}
+
+tiny3d::Matrix4x4 tiny3d::Matrix4x4::operator*(tiny3d::Matrix4x4 r) const
+{
+	r = Transp(r);
+	return Matrix4x4(
+		Dot(m[0], r.m[0]), Dot(m[0], r.m[1]), Dot(m[0], r.m[2]), Dot(m[0], r.m[3]),
+		Dot(m[1], r.m[0]), Dot(m[1], r.m[1]), Dot(m[1], r.m[2]), Dot(m[1], r.m[3]),
+		Dot(m[2], r.m[0]), Dot(m[2], r.m[1]), Dot(m[2], r.m[2]), Dot(m[2], r.m[3]),
+		Dot(m[3], r.m[0]), Dot(m[3], r.m[1]), Dot(m[3], r.m[2]), Dot(m[3], r.m[3])
+	);
+}
+
+tiny3d::Matrix4x4 tiny3d::Matrix4x4::operator*(tiny3d::Real r) const
+{
+	Matrix4x4 out;
+	for (UInt y = 0; y < 4; ++y) {
+		for (UInt x = 0; x < 4; ++x) {
+			out[y][x] = m[y][x] * r;
+		}
+	}
+	return out;
+}
+
+tiny3d::Vector3 tiny3d::Matrix4x4::operator*(const tiny3d::Vector3 &r) const
+{
+	return Vector3(
+		tiny3d::Dot(r, Vector3(m[0][0], m[0][1], m[0][2])) + m[0][3],
+		tiny3d::Dot(r, Vector3(m[1][0], m[1][1], m[1][2])) + m[1][3],
+		tiny3d::Dot(r, Vector3(m[2][0], m[2][1], m[2][2])) + m[2][3]
+	);
+}
+
+tiny3d::Matrix4x4 tiny3d::Identity4( void )
+{
+	return Matrix4x4(
+		Real(1), Real(0), Real(0), Real(0),
+		Real(0), Real(1), Real(0), Real(0),
+		Real(0), Real(0), Real(1), Real(0),
+		Real(0), Real(0), Real(0), Real(1)
+	);
+}
+
+tiny3d::Matrix4x4 tiny3d::Transp(const tiny3d::Matrix4x4 &m)
+{
+	return Matrix4x4(
+		m[0][0], m[1][0], m[2][0], m[3][0],
+		m[0][1], m[1][1], m[2][1], m[3][1],
+		m[0][2], m[1][2], m[2][2], m[3][2],
+		m[0][3], m[1][3], m[2][3], m[3][3]
+	);
+}
+
+tiny3d::Matrix4x4 tiny3d::Inv(const tiny3d::Matrix4x4 &m)
+{
+}
