@@ -106,30 +106,6 @@ tiny3d::UHInt tiny3d::Interleave8Bits(tiny3d::Byte a, tiny3d::Byte b)
 	return UHInt(x | (y << 1));
 }
 
-/*tiny3d::UInt tiny3d::Random::Roll( void ) const
-{	
-	UXInt oldstate = m_state;
-	// Advance internal state
-	m_state = oldstate * 6364136223846793005ull + m_inc;
-	// Calculate output function (XSH RR), uses old state for max ILP
-	UInt xorshifted = UInt(((oldstate >> 18u) ^ oldstate) >> 27u);
-	UInt rot = oldstate >> 59u;
-	return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
-}
-
-tiny3d::Random::Random( void ) : m_old_state(0), m_state(0xe10df4c5d34db135), m_inc(1)
-{}
-
-tiny3d::Random::Random(UXInt state, UXInt inc) : m_state(state), m_inc(inc)
-{
-	Roll(); // often generates a predictable first number, so roll that away
-}
-
-tiny3d::Random::operator tiny3d::UInt( void ) const
-{
-	return Roll();
-}*/
-
 tiny3d::SXInt tiny3d::Real::InfBits( void )
 {
 	return SXInt(Inf().x);
