@@ -236,6 +236,9 @@ Matrix3x3 Transp(const Matrix3x3 &m);
 Matrix3x3 Inv(const Matrix3x3 &m);
 Matrix3x3 Euler(Real head, Real pitch, Real roll);
 Matrix3x3 AxisAngle(Vector3 axis, Real angle);
+Matrix3x3 RotateX(Real angle);
+Matrix3x3 RotateY(Real angle);
+Matrix3x3 RotateZ(Real angle);
 
 Matrix3x3 operator*(const Matrix3x3 &l, Matrix3x3 r);
 Matrix3x3 operator*(const Matrix3x3 &l, Real r);
@@ -282,12 +285,16 @@ public:
 
 	Matrix4x4 operator*(Matrix4x4 r) const;
 	Matrix4x4 operator*(Real r) const;
-	Vector3   operator*(const Vector3 &r) const;
 };
 
 Matrix4x4 Identity4( void );
 Matrix4x4 Transp(const Matrix4x4 &m);
-Matrix4x4 Inv(const Matrix4x4 &m);
+Matrix4x4 Transform(const Matrix3x3 &rot, const Vector3 &pos);
+Matrix3x3 Rotation(const Matrix4x4 &transform);
+Vector3   Translation(const Matrix4x4 &transform);
+//Matrix4x4 Inv(const Matrix4x4 &m);
+
+Vector3 operator*(const Vector3 &l, const Matrix4x4 &r);
 
 }
 

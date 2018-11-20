@@ -137,20 +137,20 @@ tiny3d::Real::Real(float f) : x(SInt(f * (1<<TINY3D_REAL_PRECISION)))
 
 tiny3d::Real tiny3d::Real::Inf( void )
 {
-	SInt inf = std::numeric_limits<SInt>::max();
-	return *reinterpret_cast< Real* >(&inf);
+	static const SInt inf = std::numeric_limits<SInt>::max();
+	return *reinterpret_cast< const Real* >(&inf);
 }
 
 tiny3d::Real tiny3d::Real::NInf( void )
 {
-	SInt ninf = std::numeric_limits<SInt>::min() + 1;
-	return *reinterpret_cast< Real* >(&ninf);
+	static const SInt ninf = std::numeric_limits<SInt>::min() + 1;
+	return *reinterpret_cast< const Real* >(&ninf);
 }
 
 tiny3d::Real tiny3d::Real::NaN( void )
 {
-	SInt nan = std::numeric_limits<SInt>::min();
-	return *reinterpret_cast< Real* >(&nan);
+	static const SInt nan = std::numeric_limits<SInt>::min();
+	return *reinterpret_cast< const Real* >(&nan);
 }
 
 tiny3d::Real::operator tiny3d::SInt( void ) const
@@ -867,6 +867,39 @@ tiny3d::Matrix3x3 tiny3d::AxisAngle(Vector3 u, Real angle)
 	);
 }
 
+tiny3d::Matrix3x3 tiny3d::RotateX(tiny3d::Real ang)
+{
+	const Real SIN = Sin(ang);
+	const Real COS = Cos(ang);
+	return Matrix3x3(
+		Real(1), Real(0),  Real(0),
+		Real(0), COS,     -SIN,
+		Real(0), SIN,      COS
+	);
+}
+
+tiny3d::Matrix3x3 tiny3d::RotateY(tiny3d::Real ang)
+{
+	const Real SIN = Sin(ang);
+	const Real COS = Cos(ang);
+	return Matrix3x3(
+		 COS,     Real(0), SIN,
+		 Real(0), Real(1), Real(0),
+		-SIN,     Real(0), COS
+	);
+}
+
+tiny3d::Matrix3x3 tiny3d::RotateZ(tiny3d::Real ang)
+{
+	const Real SIN = Sin(ang);
+	const Real COS = Cos(ang);
+	return Matrix3x3(
+		COS,     -SIN,     Real(0),
+		SIN,      COS,     Real(0),
+		Real(0),  Real(0), Real(1)
+	);
+}
+
 tiny3d::Matrix3x3 tiny3d::operator*(const Matrix3x3 &l, tiny3d::Matrix3x3 r)
 {
 	r = tiny3d::Transp(r);
@@ -1028,15 +1061,6 @@ tiny3d::Matrix4x4 tiny3d::Matrix4x4::operator*(tiny3d::Real r) const
 	return out;
 }
 
-tiny3d::Vector3 tiny3d::Matrix4x4::operator*(const tiny3d::Vector3 &r) const
-{
-	return Vector3(
-		tiny3d::Dot(r, Vector3(m[0][0], m[0][1], m[0][2])) + m[0][3],
-		tiny3d::Dot(r, Vector3(m[1][0], m[1][1], m[1][2])) + m[1][3],
-		tiny3d::Dot(r, Vector3(m[2][0], m[2][1], m[2][2])) + m[2][3]
-	);
-}
-
 tiny3d::Matrix4x4 tiny3d::Identity4( void )
 {
 	return Matrix4x4(
@@ -1057,6 +1081,39 @@ tiny3d::Matrix4x4 tiny3d::Transp(const tiny3d::Matrix4x4 &m)
 	);
 }
 
-tiny3d::Matrix4x4 tiny3d::Inv(const tiny3d::Matrix4x4 &m)
+tiny3d::Matrix4x4 tiny3d::Transform(const tiny3d::Matrix3x3 &rot, const tiny3d::Vector3 &pos)
 {
+	return Matrix4x4(
+		rot.x.x, rot.x.y, rot.x.z, pos.x,
+		rot.y.x, rot.y.y, rot.y.z, pos.y,
+		rot.z.x, rot.z.y, rot.z.z, pos.z,
+		Real(0), Real(0), Real(0), Real(1)
+	);
+}
+
+tiny3d::Matrix3x3 tiny3d::Rotation(const tiny3d::Matrix4x4 &transform)
+{
+	return Matrix3x3(
+		transform[0][0], transform[0][1], transform[0][2],
+		transform[1][0], transform[1][1], transform[1][2],
+		transform[2][0], transform[2][1], transform[2][2]
+	);
+}
+
+tiny3d::Vector3 tiny3d::Translation(const tiny3d::Matrix4x4 &transform)
+{
+	return Vector3(transform[0][3], transform[1][3], transform[2][3]);
+}
+
+//tiny3d::Matrix4x4 tiny3d::Inv(const tiny3d::Matrix4x4 &m)
+//{
+//}
+
+tiny3d::Vector3 tiny3d::operator*(const tiny3d::Vector3 &r, const Matrix4x4 &l)
+{
+	return Vector3(
+		tiny3d::Dot(r, Vector3(l[0][0], l[0][1], l[0][2])) + l[0][3],
+		tiny3d::Dot(r, Vector3(l[1][0], l[1][1], l[1][2])) + l[1][3],
+		tiny3d::Dot(r, Vector3(l[2][0], l[2][1], l[2][2])) + l[2][3]
+	);
 }
