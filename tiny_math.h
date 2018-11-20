@@ -292,7 +292,7 @@ Matrix4x4 Transp(const Matrix4x4 &m);
 Matrix4x4 Transform(const Matrix3x3 &rot, const Vector3 &pos);
 Matrix3x3 Rotation(const Matrix4x4 &transform);
 Vector3   Translation(const Matrix4x4 &transform);
-//Matrix4x4 Inv(const Matrix4x4 &m);
+Matrix4x4 Inv(const Matrix4x4 &m);
 
 Vector3 operator*(const Vector3 &l, const Matrix4x4 &r);
 

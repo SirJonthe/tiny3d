@@ -1105,9 +1105,48 @@ tiny3d::Vector3 tiny3d::Translation(const tiny3d::Matrix4x4 &transform)
 	return Vector3(transform[0][3], transform[1][3], transform[2][3]);
 }
 
-//tiny3d::Matrix4x4 tiny3d::Inv(const tiny3d::Matrix4x4 &m)
-//{
-//}
+tiny3d::Matrix4x4 tiny3d::Inv(const tiny3d::Matrix4x4 &m)
+{
+	const Real s0 = m[0][0] * m[1][1] - m[1][0] * m[0][1];
+	const Real s1 = m[0][0] * m[1][2] - m[1][0] * m[0][2];
+	const Real s2 = m[0][0] * m[1][3] - m[1][0] * m[0][3];
+	const Real s3 = m[0][1] * m[1][2] - m[1][1] * m[0][2];
+	const Real s4 = m[0][1] * m[1][3] - m[1][1] * m[0][3];
+	const Real s5 = m[0][2] * m[1][3] - m[1][2] * m[0][3];
+	const Real c5 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+	const Real c4 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
+	const Real c3 = m[2][1] * m[3][2] - m[3][1] * m[2][2];
+	const Real c2 = m[2][0] * m[3][3] - m[3][0] * m[2][3];
+	const Real c1 = m[2][0] * m[3][2] - m[3][0] * m[2][2];
+	const Real c0 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+
+	const Real det = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
+	if (det == 0) { return Identity4(); }
+	const Real invdet = 1 / det;
+
+	Matrix4x4 i;
+	i[0][0] = ( m[1][1] * c5 - m[1][2] * c4 + m[1][3] * c3) * invdet;
+	i[0][1] = (-m[0][1] * c5 + m[0][2] * c4 - m[0][3] * c3) * invdet;
+	i[0][2] = ( m[3][1] * s5 - m[3][2] * s4 + m[3][3] * s3) * invdet;
+	i[0][3] = (-m[2][1] * s5 + m[2][2] * s4 - m[2][3] * s3) * invdet;
+
+	i[1][0] = (-m[1][0] * c5 + m[1][2] * c2 - m[1][3] * c1) * invdet;
+	i[1][1] = ( m[0][0] * c5 - m[0][2] * c2 + m[0][3] * c1) * invdet;
+	i[1][2] = (-m[3][0] * s5 + m[3][2] * s2 - m[3][3] * s1) * invdet;
+	i[1][3] = ( m[2][0] * s5 - m[2][2] * s2 + m[2][3] * s1) * invdet;
+
+	i[2][0] = ( m[1][0] * c4 - m[1][1] * c2 + m[1][3] * c0) * invdet;
+	i[2][1] = (-m[0][0] * c4 + m[0][1] * c2 - m[0][3] * c0) * invdet;
+	i[2][2] = ( m[3][0] * s4 - m[3][1] * s2 + m[3][3] * s0) * invdet;
+	i[2][3] = (-m[2][0] * s4 + m[2][1] * s2 - m[2][3] * s0) * invdet;
+
+	i[3][0] = (-m[1][0] * c3 + m[1][1] * c1 - m[1][2] * c0) * invdet;
+	i[3][1] = ( m[0][0] * c3 - m[0][1] * c1 + m[0][2] * c0) * invdet;
+	i[3][2] = (-m[3][0] * s3 + m[3][1] * s1 - m[3][2] * s0) * invdet;
+	i[3][3] = ( m[2][0] * s3 - m[2][1] * s1 + m[2][2] * s0) * invdet;
+
+	return i;
+}
 
 tiny3d::Vector3 tiny3d::operator*(const tiny3d::Vector3 &r, const Matrix4x4 &l)
 {
