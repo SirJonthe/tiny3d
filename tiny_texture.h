@@ -30,6 +30,7 @@ private:
 	tiny3d::UInt   GetIndex(tiny3d::UPoint p) const;
 	tiny3d::UHInt  EncodeTexel(tiny3d::Color color) const;
 	tiny3d::Color  DecodeTexel(tiny3d::UHInt texel) const;
+	void           UpdateMip(UInt level, UInt cur_off, UInt cur_dim, UInt prev_off, UInt prev_dim);
 
 public:
 	 Texture( void );

@@ -22,6 +22,7 @@ namespace tiny3d
 
 class Image;
 class Real;
+struct URect;
 
 typedef uint64_t UXInt;
 typedef int64_t  SXInt;
@@ -40,8 +41,8 @@ namespace System
 
 	namespace Video
 	{
-		void Blit(const Image &src);
-		void Update( void );
+		void Blit(const Image &src, const URect *dst_rect = nullptr);
+		void Update(const URect *dst_rect = nullptr);
 		int  Width( void );
 		int  Height( void );
 	}

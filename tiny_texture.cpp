@@ -97,6 +97,26 @@ tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
 	return color;
 }
 
+void tiny3d::Texture::UpdateMip(tiny3d::UInt level, tiny3d::UInt cur_off, tiny3d::UInt cur_dim, tiny3d::UInt prev_off, tiny3d::UInt prev_dim)
+{
+	for (UInt y = 0; y < cur_dim; ++y) {
+		for (UInt x = 0; x < cur_dim; ++x) {
+			Color c00 = DecodeTexel(m_texels[prev_off + y*2*prev_dim + x*2]);
+			Color c10 = DecodeTexel(m_texels[prev_off + y*2*prev_dim + (x+1)*2]);
+			Color c01 = DecodeTexel(m_texels[prev_off + (y+1)*2*prev_dim + x*2]);
+			Color c11 = DecodeTexel(m_texels[prev_off + (y+1)*2*prev_dim + (x+1)*2]);
+			UInt r = (UInt(c00.r) + UInt(c10.r) + UInt(c01.r) + UInt(c11.r)) / 4;
+			UInt g = (UInt(c00.g) + UInt(c10.g) + UInt(c01.g) + UInt(c11.g)) / 4;
+			UInt b = (UInt(c00.b) + UInt(c10.b) + UInt(c01.b) + UInt(c11.b)) / 4;
+			UInt blend = Max(c00.blend, c10.blend, Max(c01.blend, c11.blend));
+			m_texels[cur_off + y*cur_dim + x] = EncodeTexel(Color{ Byte(r), Byte(g), Byte(b), Byte(blend) });
+		}
+	}
+	if (cur_dim > 8) {
+		UpdateMip(level + 1, cur_off + cur_dim * cur_dim, cur_dim >> 1, cur_off, cur_dim);
+	}
+}
+
 tiny3d::Texture::Texture( void ) : m_texels(nullptr), m_dimension(0), m_dim_mask(0), m_dim_shift(0), m_fix_dim(0), m_blend_modes{ Color::BlendMode_Transparent, Color::BlendMode_Solid }
 {}
 
@@ -216,7 +236,7 @@ void tiny3d::Texture::SetBlendMode2(tiny3d::Color::BlendMode blend_mode)
 
 void tiny3d::Texture::ApplyChanges( void )
 {
-	// Reserved for updating mip maps
+//	UpdateMip(1, m_dimension * m_dimension, m_dimension >> 1, 0, m_dimension);
 }
 
 tiny3d::Texture &tiny3d::Texture::operator=(const tiny3d::Texture &t)

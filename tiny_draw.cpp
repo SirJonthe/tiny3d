@@ -198,9 +198,9 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 
 	if (dst_rect != nullptr) {
 		min_y = SInt(tiny3d::Max(UInt(min_y), dst_rect->a.y));
-		max_y = SInt(tiny3d::Min(UInt(max_y), dst_rect->b.y));
+		max_y = SInt(tiny3d::Min(UInt(max_y), dst_rect->b.y - 1));
 		min_x = SInt(tiny3d::Max(UInt(min_x), dst_rect->a.x));
-		max_x = SInt(tiny3d::Min(UInt(max_x), dst_rect->b.x));
+		max_x = SInt(tiny3d::Min(UInt(max_x), dst_rect->b.x - 1));
 	}
 
 	// Triangle setup
