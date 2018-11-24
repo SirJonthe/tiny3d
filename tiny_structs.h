@@ -123,6 +123,8 @@ public:
 		TINY3D_ASSERT(i < m_size);
 		return m_arr[i];
 	}
+	operator type_t*( void )             { return m_arr; }
+	operator const type_t*( void ) const { return m_arr; }
 	UInt GetSize( void ) const { return m_size; }
 };
 

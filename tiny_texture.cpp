@@ -251,3 +251,65 @@ tiny3d::UInt tiny3d::Texture::MaxDimension( void )
 {
 	return 0x80;
 }
+
+
+
+tiny3d::UInt tiny3d::Texture2::DimShift(tiny3d::UInt x) const
+{
+	UInt n;
+	for (n = 0; x != 1; x >>= 1) { ++n; }
+	return n;
+}
+
+bool tiny3d::Texture2::Create(tiny3d::UInt dimensions)
+{
+	Destroy();
+	if (dimensions > 0x80 || IsPow2(dimensions) == false) { return false; }
+	UInt levels = 0;
+	for (UInt d = dimensions; d >= 8; d >>= 1) {
+		++levels;
+	}
+	m_maps.Create(levels);
+	UInt dim_shift = DimShift(dimensions);
+	UInt dim_mask  = dimensions - 1;
+	for (UInt i = 0; i < m_maps.GetSize(); ++i) {
+		m_maps[i] = { new UHInt[dimensions*dimensions], dimensions, dim_shift, dim_mask, Real(SInt(dimensions)) };
+		dimensions >>= 1;
+		dim_shift -= 1;
+		dim_mask >>= 1;
+	}
+	return true;
+}
+
+void tiny3d::Texture2::Destroy( void )
+{
+	for (UInt i = 0; i < m_maps.GetSize(); ++i) {
+		delete [] m_maps[i].texels;
+	}
+	m_maps.Destroy();
+}
+
+void tiny3d::Texture2::ApplyChanges( void )
+{
+	for (UInt i = 1; i < m_maps.GetSize(); ++i) {
+		UInt j = i - 1;
+		for (UInt y = 0; y < m_maps[i].dimensions; ++y) {
+			for (UInt x = 0; x < m_maps[i].dimensions; ++x) {
+				UInt c00 = m_maps[j].texels[x*2 + y*2 * m_maps[j].dimensions];
+				UInt c10 = m_maps[j].texels[x*2+1 + y*2 * m_maps[j].dimensions];
+				UInt c01 = m_maps[j].texels[x*2 + (y*2+1) * m_maps[j].dimensions];
+				UInt c11 = m_maps[j].texels[x*2+1 + (y*2+1) * m_maps[j].dimensions];
+				m_maps[i].texels[x + y * m_maps[i].dimensions] = UHInt((c00 + c10 + c01 + c11) / 4);
+			}
+		}
+	}
+}
+
+UHInt tiny3d::Texture2::GetColor(tiny3d::Vector2 uv, tiny3d::UInt inv_texel_size)
+{
+	// inv_texel_size - the inverse on-screen size of the texel in pixels (1/texel_size)
+	UInt l = Min(DimShift(inv_texel_size), m_maps.GetSize() - 1);
+	UInt x = UInt(SInt(uv.x * m_maps[l].rdimensions)) & m_maps[l].dim_mask;
+	UInt y = UInt(SInt(uv.y * m_maps[l].rdimensions)) & m_maps[l].dim_mask;
+	return m_maps[l].texels[x + (y << m_maps[l].dim_shift)];
+}

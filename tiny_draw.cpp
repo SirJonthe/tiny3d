@@ -257,8 +257,14 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 
 				if (sz <= dz && pixel.blend != tiny3d::Color::BlendMode_Transparent) { // use transparency bit as a 1-bit stencil
 
-					const Vector2 uv   = (a.t * l0 + b.t * l1 + c.t * l2) * sz;
-					const Vector3 tcol = (a.c * l0 + b.c * l1 + c.c * l2) * sz;
+					const Real L0 = l0 * sz;
+					const Real L1 = l1 * sz;
+					const Real L2 = l2 * sz; // THESE CAN BE USED TO DETERMINE MIP LEVEL TO USE FOR TEXTURES
+
+					//const Vector2 uv   = (a.t * l0 + b.t * l1 + c.t * l2) * sz;
+					//const Vector3 tcol = (a.c * l0 + b.c * l1 + c.c * l2) * sz;
+					const Vector2 uv = (a.t * L0 + b.t * L1 + c.t * L2);
+					const Vector3 tcol = (a.c * L0 + b.c * L1 + c.c * L2);
 					const Color col = {
 						Byte(SInt(tcol.x)),
 						Byte(SInt(tcol.y)),

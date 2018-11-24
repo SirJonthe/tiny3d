@@ -59,6 +59,32 @@ public:
 	static tiny3d::UInt MaxDimension( void );
 };
 
+class Texture2
+{
+private:
+	struct Map
+	{
+		tiny3d::UHInt *texels;
+		tiny3d::UInt   dimensions;
+		tiny3d::UInt   dim_shift;
+		tiny3d::UInt   dim_mask;
+		tiny3d::Real   rdimensions;
+	};
+
+private:
+	tiny3d::Array<Map>       m_maps;
+	tiny3d::Color::BlendMode m_blend_modes[2];
+
+private:
+	tiny3d::UInt DimShift(tiny3d::UInt x) const;
+
+public:
+	bool Create(tiny3d::UInt dimensions);
+	void Destroy( void );
+	void ApplyChanges( void );
+	tiny3d::UHInt GetColor(tiny3d::Vector2 uv, tiny3d::UInt inv_pixel_size = 1);
+};
+
 }
 
 #endif // TINY_TEXTURE_H
