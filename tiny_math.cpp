@@ -137,19 +137,19 @@ tiny3d::Real::Real(float f) : x(SInt(f * (1<<TINY3D_REAL_PRECISION)))
 
 tiny3d::Real tiny3d::Real::Inf( void )
 {
-	static const SInt inf = std::numeric_limits<SInt>::max();
+	constexpr SInt inf = std::numeric_limits<SInt>::max();
 	return *reinterpret_cast< const Real* >(&inf);
 }
 
 tiny3d::Real tiny3d::Real::NInf( void )
 {
-	static const SInt ninf = std::numeric_limits<SInt>::min() + 1;
+	constexpr SInt ninf = std::numeric_limits<SInt>::min() + 1;
 	return *reinterpret_cast< const Real* >(&ninf);
 }
 
 tiny3d::Real tiny3d::Real::NaN( void )
 {
-	static const SInt nan = std::numeric_limits<SInt>::min();
+	constexpr SInt nan = std::numeric_limits<SInt>::min();
 	return *reinterpret_cast< const Real* >(&nan);
 }
 
