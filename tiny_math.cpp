@@ -23,8 +23,8 @@
 	#define TINY3D_RSHIFT(x, y) (((x) < 0) ? -(-(x) >> (y)) : ((x) >> (y)))
 #endif
 
-#define TINY3D_REAL_UPSCALE(x) (TINY3D_LSHIFT((x), TINY3D_REAL_PRECISION))
-#define TINY3D_REAL_DOWNSCALE(x) (TINY3D_RSHIFT((x), TINY3D_REAL_PRECISION))
+#define TINY3D_REAL_UPSCALE(x) (TINY3D_LSHIFT((x), tiny3d::Real::S_PREC))
+#define TINY3D_REAL_DOWNSCALE(x) (TINY3D_RSHIFT((x), tiny3d::Real::S_PREC))
 
 tiny3d::UInt tiny3d::Log(tiny3d::UInt base, tiny3d::UInt x)
 {
@@ -106,14 +106,9 @@ tiny3d::UHInt tiny3d::Interleave8Bits(tiny3d::Byte a, tiny3d::Byte b)
 	return UHInt(x | (y << 1));
 }
 
-tiny3d::SXInt tiny3d::Real::InfBits( void )
+tiny3d::SInt tiny3d::Sign(tiny3d::SInt x)
 {
-	return SXInt(Inf().x);
-}
-
-tiny3d::SXInt tiny3d::Real::NInfBits( void )
-{
-	return SXInt(NInf().x);
+	return x < 0 ? -1 : (x > 0 ? 1 : 0);
 }
 
 tiny3d::Real::Real( void ) : x(0)
@@ -124,32 +119,24 @@ tiny3d::Real::Real(const tiny3d::Real &r) : x(r.x)
 
 tiny3d::Real::Real(tiny3d::SInt i) : x(SInt(TINY3D_REAL_UPSCALE(i))) {}
 
-// ERROR: Real(-0,255) -> there is no such thing as -0
-// ERROR: Real(0,0001) -> 0001 translates to 1
-/*tiny3d::Real::Real(tiny3d::SInt i, tiny3d::UInt f)
-{
-	UXInt frac = (TINY3D_REAL_UPSCALE(f)) / Exp(10, Log10(f) + 1);
-	x = SInt(TINY3D_REAL_UPSCALE(i));
-	x = x >= 0 ? x + SInt(frac) : x - SInt(frac);
-}*/
-tiny3d::Real::Real(float f) : x(SInt(f * (1<<TINY3D_REAL_PRECISION)))
+tiny3d::Real::Real(float f) : x(SInt(f * (1<<S_PREC)))
 {}
 
 tiny3d::Real tiny3d::Real::Inf( void )
 {
-	constexpr SInt inf = std::numeric_limits<SInt>::max();
+	constexpr real_t inf = S_INF_BIT;
 	return *reinterpret_cast< const Real* >(&inf);
 }
 
 tiny3d::Real tiny3d::Real::NInf( void )
 {
-	constexpr SInt ninf = std::numeric_limits<SInt>::min() + 1;
+	constexpr real_t ninf = S_NINF_BIT;
 	return *reinterpret_cast< const Real* >(&ninf);
 }
 
 tiny3d::Real tiny3d::Real::NaN( void )
 {
-	constexpr SInt nan = std::numeric_limits<SInt>::min();
+	constexpr real_t nan = S_NAN_BIT;
 	return *reinterpret_cast< const Real* >(&nan);
 }
 
@@ -160,33 +147,32 @@ tiny3d::Real::operator tiny3d::SInt( void ) const
 
 bool tiny3d::Real::IsNaN( void ) const
 {
-	return x == NaN().x;
+	return x == S_NAN_BIT;
 }
 
 bool tiny3d::Real::IsInf( void ) const
 {
-	return x == Inf().x;
+	return x == S_INF_BIT;
 }
 
 bool tiny3d::Real::IsNInf( void ) const
 {
-	return x == NInf().x;
+	return x == S_NINF_BIT;
 }
 
 tiny3d::Real tiny3d::Real::operator-( void ) const
 {
 	Real o;
-	o.x = !IsNaN() ? -x : NaN().x;
+	o.x = !IsNaN() ? -x : S_NAN_BIT;
 	return o;
 }
 
 tiny3d::Real &tiny3d::Real::operator+=(tiny3d::Real r)
 {
 	if (!IsNaN() && !r.IsNaN()) {
-		SXInt t = SXInt(x) + r.x;
-		x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+		x = SInt(Clamp(SXInt(S_NINF_BIT), SXInt(x) + SXInt(r.x), SXInt(S_INF_BIT)));
 	} else {
-		x = NaN().x;
+		x = S_NAN_BIT;
 	}
 	return *this;
 }
@@ -194,10 +180,9 @@ tiny3d::Real &tiny3d::Real::operator+=(tiny3d::Real r)
 tiny3d::Real &tiny3d::Real::operator-=(tiny3d::Real r)
 {
 	if (!IsNaN() && !r.IsNaN()) {
-		SXInt t = SXInt(x) - r.x;
-		x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+		x = SInt(Clamp(SXInt(S_NINF_BIT), SXInt(x) - SXInt(r.x), SXInt(S_INF_BIT)));
 	} else {
-		x = NaN().x;
+		x = S_NAN_BIT;
 	}
 	return *this;
 }
@@ -205,15 +190,13 @@ tiny3d::Real &tiny3d::Real::operator-=(tiny3d::Real r)
 tiny3d::Real &tiny3d::Real::operator*=(tiny3d::Real r)
 {
 	if (!IsNaN() && !r.IsNaN()) {
-		if (r.x != Inf().x && r.x != NInf().x) {
-			SXInt t = SXInt(x) * r.x;
-			t = TINY3D_REAL_DOWNSCALE(t);
-			x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+		if (!r.IsInf() && !r.IsNInf()) {
+			x = SInt(Clamp(SXInt(S_NINF_BIT), TINY3D_REAL_DOWNSCALE(SXInt(x) * SXInt(r.x)), SXInt(S_INF_BIT)));
 		} else {
-			x = x != 0 ? r.x : x;
+			x = x == 0 ? 0 : (Sign(x) != Sign(r.x) ? S_NINF_BIT : S_INF_BIT);
 		}
 	} else {
-		x = NaN().x;
+		x = S_NAN_BIT;
 	}
 	return *this;
 }
@@ -222,13 +205,12 @@ tiny3d::Real &tiny3d::Real::operator/=(tiny3d::Real r)
 {
 	if (!IsNaN() && !r.IsNaN()) {
 		if (r.x != 0) {
-			SXInt t = TINY3D_REAL_UPSCALE(SXInt(x)) / r.x;
-			x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+			x = SInt(Clamp(SXInt(S_NINF_BIT), TINY3D_REAL_UPSCALE(SXInt(x)) / SXInt(r.x), SXInt(S_INF_BIT)));
 		} else {
-			x = x != 0 ? Inf().x : 0;
+			x = x < 0 ? S_NINF_BIT : (x > 0 ? S_INF_BIT : 0);
 		}
 	} else {
-		x = NaN().x;
+		x = S_NAN_BIT;
 	}
 	return *this;
 }
@@ -236,8 +218,7 @@ tiny3d::Real &tiny3d::Real::operator/=(tiny3d::Real r)
 tiny3d::Real &tiny3d::Real::operator+=(tiny3d::SInt r)
 {
 	if (!IsNaN() && !IsInf() && !IsNInf()) {
-		SXInt t = SXInt(x) + TINY3D_REAL_UPSCALE(SXInt(r));
-		x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+		x = SInt(Clamp(SXInt(S_NINF_BIT), SXInt(x) + TINY3D_REAL_UPSCALE(SXInt(r)), SXInt(S_INF_BIT)));
 	}
 	return *this;
 }
@@ -245,8 +226,7 @@ tiny3d::Real &tiny3d::Real::operator+=(tiny3d::SInt r)
 tiny3d::Real &tiny3d::Real::operator-=(tiny3d::SInt r)
 {
 	if (!IsNaN() && !IsInf() && !IsNInf()) {
-		SXInt t = SXInt(x) - TINY3D_REAL_UPSCALE(SXInt(r));
-		x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+		x = SInt(Clamp(SXInt(S_NINF_BIT), SXInt(x) - TINY3D_REAL_UPSCALE(SXInt(r)), SXInt(S_INF_BIT)));
 	}
 	return *this;
 }
@@ -255,7 +235,7 @@ tiny3d::Real &tiny3d::Real::operator*=(tiny3d::SInt r)
 {
 	if (!IsNaN() && !IsInf() && !IsNInf()) {
 		SXInt t = SXInt(x) * r;
-		x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+		x = SInt(Clamp(SXInt(S_NINF_BIT), t, SXInt(S_INF_BIT)));
 	}
 	return *this;
 }
@@ -265,9 +245,9 @@ tiny3d::Real &tiny3d::Real::operator/=(tiny3d::SInt r)
 	if (!IsNaN() && !IsInf() && !IsNInf()) {
 		if (r != 0) {
 			SXInt t = SXInt(x) / r;
-			x = SInt(Clamp(SXInt(NInfBits()), t, SXInt(InfBits())));
+			x = SInt(Clamp(SXInt(S_NINF_BIT), t, SXInt(S_INF_BIT)));
 		} else {
-			x = x != 0 ? Inf().x : 0;
+			x = x != 0 ? S_INF_BIT : 0;
 		}
 	}
 	return *this;
@@ -305,17 +285,12 @@ bool tiny3d::Real::operator>=(tiny3d::Real r) const
 
 float tiny3d::Real::Debug_ToFloat( void ) const
 {
-	return float(x) / float(1 << TINY3D_REAL_PRECISION);
+	return float(x) / float(1 << S_PREC);
 }
 
-tiny3d::UInt  tiny3d::Real::Debug_ToBits( void ) const
+tiny3d::UInt  tiny3d::Real::ToBits( void ) const
 {
 	return UInt(x);
-}
-
-tiny3d::UInt tiny3d::Real::Precision( void )
-{
-	return TINY3D_REAL_PRECISION;
 }
 
 tiny3d::Real tiny3d::operator +(tiny3d::Real l, tiny3d::Real r) { return l += r; }
@@ -378,7 +353,7 @@ tiny3d::Real tiny3d::Sin(tiny3d::Real rad)
 	return sin;
 }
 
-float tiny3d::Debug_Sin(float rad)
+/*float tiny3d::Debug_Sin(float rad)
 {
 	const float PI     = 3.14159265f;
 	const float TAU    = 6.28318531f;
@@ -409,17 +384,17 @@ float tiny3d::Debug_Sin(float rad)
 	}
 
 	return sin;
-}
+}*/
 
 tiny3d::Real tiny3d::Cos(tiny3d::Real rad)
 {
 	return tiny3d::Sin(rad + (Pi() / 2));
 }
 
-float tiny3d::Debug_Cos(float rad)
+/*float tiny3d::Debug_Cos(float rad)
 {
 	return Debug_Sin(rad + (3.14159265f / 2.0f));
-}
+}*/
 
 // https://github.com/chmike/fpsqrt/blob/master/fpsqrt.c
 // Algorithm and code Author: Christophe Meessen 1993. Initially published in: usenet comp.lang.c, Thu, 28 Jan 1993 08:35:23 GMT, Subject: Fixed point sqrt by: Meessen Christophe

@@ -2,10 +2,7 @@
 #define TINY_MATH_H
 
 #include <limits>
-
 #include "tiny_system.h"
-
-#define TINY3D_REAL_PRECISION 16
 
 namespace tiny3d
 {
@@ -26,22 +23,25 @@ UXInt Exp(UInt x, UInt n);
 bool  IsPow2(UInt x);
 UInt  Interleave16Bits(UHInt a, UHInt b);
 UHInt Interleave8Bits(Byte a, Byte b);
+SInt  Sign(SInt x);
 
 // if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
 class Real
 {
 private:
-	SInt x;
+	typedef SInt real_t;
+	static constexpr real_t S_INF_BIT = std::numeric_limits<real_t>::max();
+	static constexpr real_t S_NINF_BIT = std::numeric_limits<real_t>::min() + 1;
+	static constexpr real_t S_NAN_BIT = std::numeric_limits<real_t>::min();
+	static constexpr real_t S_PREC = 16;
 
-public:
-	static SXInt InfBits( void );
-	static SXInt NInfBits( void );
+private:
+	real_t x;
 
 public:
 	Real( void );
 	Real(const Real &r);
 	explicit Real(SInt i);
-//	Real(SInt i, UInt f); // Too many issues with this
 	explicit Real(float f);
 
 	static Real Inf( void );
@@ -72,9 +72,9 @@ public:
 	bool operator >=(Real r) const;
 
 	float Debug_ToFloat( void ) const;
-	UInt  Debug_ToBits( void )  const;
+	UInt  ToBits( void )  const;
 
-	static UInt Precision( void );
+	static constexpr UInt Precision( void ) { return S_PREC; }
 
 	friend Real Frac(Real r);
 	friend SInt Trunc(Real r);
@@ -122,9 +122,9 @@ Real Wrap(Real min, Real x, Real max)
 Real  Pi( void );
 Real  Tau( void );
 Real  Sin(Real rad);
-float Debug_Sin(float rad);
+//float Debug_Sin(float rad);
 Real  Cos(Real rad);
-float Debug_Cos(float rad);
+//float Debug_Cos(float rad);
 Real  Sqrt(Real x);
 Real  Frac(Real r);
 SInt  Trunc(Real r);
