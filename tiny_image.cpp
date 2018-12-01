@@ -32,13 +32,7 @@ tiny3d::Color tiny3d::Image::DecodePixel(tiny3d::UHInt pixel) const
 		* 0x100
 		- 1)
 		>> 5;
-//	UInt r = Interleave8Bits(Byte((pixel & 0x7C00) >> 10), 0);
-//	UInt g = Interleave8Bits(Byte((pixel & 0x03E0) >> 5), 0);
-//	UInt b = Interleave8Bits(Byte(pixel & 0x001F), 0);
 	Color color;
-//	color.r = Byte(r | (r << 1));
-//	color.g = Byte(g | (g << 1));
-//	color.b = Byte(b | (b << 1));
 	color.r = Byte(r);
 	color.g = Byte(g);
 	color.b = Byte(b);
@@ -49,12 +43,12 @@ tiny3d::Color tiny3d::Image::DecodePixel(tiny3d::UHInt pixel) const
 tiny3d::Image::Image( void ) : m_pixels(nullptr), m_width(0), m_height(0)
 {}
 
-tiny3d::Image::Image(tiny3d::UHInt dimension) : Image()
+tiny3d::Image::Image(tiny3d::UInt dimension) : Image()
 {
 	Create(dimension);
 }
 
-tiny3d::Image::Image(tiny3d::UHInt width, tiny3d::UHInt height) : Image()
+tiny3d::Image::Image(tiny3d::UInt width, tiny3d::UInt height) : Image()
 {
 	Create(width, height);
 }
@@ -69,7 +63,7 @@ tiny3d::Image::~Image( void )
 	delete [] m_pixels;
 }
 
-bool tiny3d::Image::Create(tiny3d::UHInt width, tiny3d::UHInt height)
+bool tiny3d::Image::Create(tiny3d::UInt width, tiny3d::UInt height)
 {
 	if (width > MaxDimension() || height > MaxDimension()) {
 		Destroy();
@@ -84,7 +78,7 @@ bool tiny3d::Image::Create(tiny3d::UHInt width, tiny3d::UHInt height)
 	return true;
 }
 
-bool tiny3d::Image::Create(tiny3d::UHInt dimensions)
+bool tiny3d::Image::Create(tiny3d::UInt dimensions)
 {
 	return Create(dimensions, dimensions);
 }
@@ -136,12 +130,12 @@ void tiny3d::Image::ClearStencil(tiny3d::URect rect, tiny3d::Color::BlendMode st
 	}
 }
 
-tiny3d::UHInt tiny3d::Image::GetWidth( void ) const
+tiny3d::UInt tiny3d::Image::GetWidth( void ) const
 {
 	return m_width;
 }
 
-tiny3d::UHInt tiny3d::Image::GetHeight( void ) const
+tiny3d::UInt tiny3d::Image::GetHeight( void ) const
 {
 	return m_height;
 }
@@ -166,9 +160,4 @@ tiny3d::Image &tiny3d::Image::operator=(const tiny3d::Image &i)
 		Copy(i);
 	}
 	return *this;
-}
-
-tiny3d::UInt tiny3d::Image::MaxDimension( void )
-{
-	return 0x400;
 }

@@ -3,7 +3,7 @@
 
 using namespace tiny3d;
 
-bool tiny3d::Texture::SetDimension(tiny3d::UHInt dimension)
+bool tiny3d::Texture::SetDimension(tiny3d::UInt dimension)
 {
 	const bool is_valid = dimension <= MaxDimension() && tiny3d::IsPow2(dimension);
 	if (is_valid) {
@@ -120,7 +120,7 @@ void tiny3d::Texture::UpdateMip(tiny3d::UInt level, tiny3d::UInt cur_off, tiny3d
 tiny3d::Texture::Texture( void ) : m_texels(nullptr), m_dimension(0), m_dim_mask(0), m_dim_shift(0), m_fix_dim(0), m_blend_modes{ Color::BlendMode_Transparent, Color::BlendMode_Solid }
 {}
 
-tiny3d::Texture::Texture(tiny3d::UHInt dimension) : Texture()
+tiny3d::Texture::Texture(tiny3d::UInt dimension) : Texture()
 {
 	Create(dimension);
 }
@@ -136,13 +136,12 @@ tiny3d::Texture::~Texture( void )
 	// TODO: Destroy mipmaps here
 }
 
-bool tiny3d::Texture::Create(tiny3d::UHInt dimension)
+bool tiny3d::Texture::Create(tiny3d::UInt dimension)
 {
 	if (dimension != m_dimension) {
 		delete m_texels;
 		if (SetDimension(dimension)) {
 			m_texels = new UHInt[dimension * dimension];
-			// TODO: Create mipmaps here
 		} else {
 			m_texels = nullptr;
 			return false;
@@ -155,7 +154,6 @@ void tiny3d::Texture::Destroy( void )
 {
 	delete [] m_texels;
 	m_texels = nullptr;
-	// TODO: Destroy mipmaps here
 	SetDimension(0);
 }
 
@@ -167,28 +165,41 @@ void tiny3d::Texture::Copy(const tiny3d::Texture &t)
 	for (UInt i = 0; i < m_dimension*m_dimension; ++i) {
 		m_texels[i] = t.m_texels[i];
 	}
-	// TODO: Mipmap copying here
 }
 
-bool tiny3d::Texture::Copy(const tiny3d::Image &i)
+bool tiny3d::Texture::ToImage(tiny3d::Image &image) const
 {
-	if (!Create(UHInt(Min(UInt(Max(i.GetWidth(), i.GetHeight())), Texture::MaxDimension())))) { return false; }
-	for (UInt y = 0; y < GetHeight(); ++y) {
-		for (UInt x = 0; x < GetWidth(); ++x) {
-			UPoint p = { x, y };
-			SetColor(p, i.GetColor(p));
+	UInt dim = GetWidth();
+	if (!image.Create(dim, dim)) { return false; }
+	for (UInt y = 0; y < dim; ++y) {
+		for (UInt x = 0; x < dim; ++x) {
+			image.SetColor({ x, y }, GetColor({ x, y }));
 		}
 	}
-	ApplyChanges();
 	return true;
 }
 
-tiny3d::UHInt tiny3d::Texture::GetWidth( void ) const
+bool tiny3d::Texture::FromImage(const tiny3d::Image &image)
+{
+	if (image.GetWidth() != image.GetHeight() || !Create(image.GetWidth())) { return false; }
+
+	UInt dim = GetWidth();
+	for (UInt y = 0; y < dim; ++y) {
+		for (UInt x = 0; x < dim; ++x) {
+			SetColor({ x, y }, image.GetColor({ x, y }));
+		}
+	}
+	ApplyChanges();
+
+	return true;
+}
+
+tiny3d::UInt tiny3d::Texture::GetWidth( void ) const
 {
 	return m_dimension;
 }
 
-tiny3d::UHInt tiny3d::Texture::GetHeight( void ) const
+tiny3d::UInt tiny3d::Texture::GetHeight( void ) const
 {
 	return m_dimension;
 }
@@ -236,7 +247,7 @@ void tiny3d::Texture::SetBlendMode2(tiny3d::Color::BlendMode blend_mode)
 
 void tiny3d::Texture::ApplyChanges( void )
 {
-//	UpdateMip(1, m_dimension * m_dimension, m_dimension >> 1, 0, m_dimension);
+	// Compress
 }
 
 tiny3d::Texture &tiny3d::Texture::operator=(const tiny3d::Texture &t)
@@ -247,69 +258,246 @@ tiny3d::Texture &tiny3d::Texture::operator=(const tiny3d::Texture &t)
 	return *this;
 }
 
-tiny3d::UInt tiny3d::Texture::MaxDimension( void )
+
+
+
+
+
+/*tiny3d::UHInt tiny3d::Texture::EncodeTexel(tiny3d::Color color) const
 {
-	return 0x80;
+	// bits = M BBBB GGGG RRRR
+	UInt r = (((UInt(color.r) + 1) * 0x100) - 1) >> 11;
+	UInt g = (((UInt(color.g) + 1) * 0x100) - 1) >> 11;
+	UInt b = (((UInt(color.b) + 1) * 0x100) - 1) >> 11;
+	UInt stencil = UInt(color.blend & 1) << 15;
+	UHInt texel = UHInt(stencil) | UHInt(r) | UHInt(g << 5) | UHInt(b << 10);
+	return texel;
 }
 
-
-
-tiny3d::UInt tiny3d::Texture2::DimShift(tiny3d::UInt x) const
+tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
 {
-	UInt n;
-	for (n = 0; x != 1; x >>= 1) { ++n; }
-	return n;
+	// bits = M BBBB GGGG RRRR
+	UInt b =
+		(((texel & 0x001F) + 1)        // convert channel to number with 1 bit of range and 5 bits of precision
+		* 0x100                        // multiply by 1 with 1 bit of range and 8 bits of precision, resulting in a number with 13 bits of precision
+		- 1)                           // subtract 1 to compress number back to 0 bits of range and 13 bits of precision
+		>> 5;                          // shift away 5 bits of precision to keep a number with 0 bits of range and 8 bits of precision
+	UInt g =
+		((((texel & 0x03E0) >> 5) + 1)
+		* 0x100
+		- 1)
+		>> 5;
+	UInt r =
+		((((texel & 0x7C00) >> 10) + 1)
+		* 0x100
+		- 1)
+		>> 5;
+	Color color;
+	color.r = Byte(r);
+	color.g = Byte(g);
+	color.b = Byte(b);
+	color.blend = (texel & 0x8000) ? m_blend_modes[1] : m_blend_modes[0];
+	return color;
 }
 
-bool tiny3d::Texture2::Create(tiny3d::UInt dimensions)
+tiny3d::UPoint tiny3d::Texture::GetXY(const tiny3d::Vector2 &uv, tiny3d::UInt l) const
+{
+	UInt x = UInt(SInt(uv.x * m_maps[l].rdimensions)) & m_maps[l].dim_mask;
+	UInt y = UInt(SInt(uv.y * m_maps[l].rdimensions)) & m_maps[l].dim_mask;
+	return { x, y };
+}
+
+tiny3d::UInt tiny3d::Texture::GetIndex(tiny3d::UPoint p) const
+{
+	p.x = (p.x | (p.x << 8)) & 0x00FF00FF;
+	p.x = (p.x | (p.x << 4)) & 0x0F0F0F0F;
+	p.x = (p.x | (p.x << 2)) & 0x33333333;
+	p.x = (p.x | (p.x << 1)) & 0x55555555;
+
+	p.y = (p.y | (p.y << 8)) & 0x00FF00FF;
+	p.y = (p.y | (p.y << 4)) & 0x0F0F0F0F;
+	p.y = (p.y | (p.y << 2)) & 0x33333333;
+	p.y = (p.y | (p.y << 1)) & 0x55555555;
+
+	return p.x | (p.y << 1);
+}
+
+tiny3d::Texture::Texture( void ) : m_maps(), m_blend_modes{ Color::BlendMode_Transparent, Color::BlendMode_Solid }, m_level(0)
+{}
+
+tiny3d::Texture::Texture(tiny3d::UInt dimensions) : Texture()
+{
+	Create(dimensions);
+}
+
+tiny3d::Texture::Texture(const tiny3d::Texture &t) : Texture()
+{
+	Copy(t);
+}
+
+tiny3d::Texture::~Texture( void )
 {
 	Destroy();
-	if (dimensions > 0x80 || IsPow2(dimensions) == false) { return false; }
-	UInt levels = 0;
+}
+
+bool tiny3d::Texture::Create(tiny3d::UInt dimensions)
+{
+	Destroy();
+	if (dimensions == 0 || dimensions > MaxDimension() || IsPow2(dimensions) == false) { return false; }
+	UInt levels = 1;
 	for (UInt d = dimensions; d >= 8; d >>= 1) {
 		++levels;
 	}
 	m_maps.Create(levels);
-	UInt dim_shift = DimShift(dimensions);
 	UInt dim_mask  = dimensions - 1;
 	for (UInt i = 0; i < m_maps.GetSize(); ++i) {
-		m_maps[i] = { new UHInt[dimensions*dimensions], dimensions, dim_shift, dim_mask, Real(SInt(dimensions)) };
+		m_maps[i] = { new UHInt[dimensions*dimensions], dimensions, dim_mask, Real(SInt(dimensions)) };
 		dimensions >>= 1;
-		dim_shift -= 1;
 		dim_mask >>= 1;
 	}
 	return true;
 }
 
-void tiny3d::Texture2::Destroy( void )
+void tiny3d::Texture::Copy(const tiny3d::Texture &t)
+{
+	Destroy();
+	m_maps.Create(t.m_maps.GetSize());
+	for (UInt l = 0; l < m_maps.GetSize(); ++l) {
+		m_maps[l].dim_mask = t.m_maps[l].dim_mask;
+		m_maps[l].dimensions = t.m_maps[l].dimensions;
+		m_maps[l].rdimensions = t.m_maps[l].rdimensions;
+		const UInt AREA = m_maps[l].dimensions * m_maps[l].dimensions;
+		m_maps[l].texels = new UHInt[AREA];
+		for (UInt i = 0; i < AREA; ++i) {
+			m_maps[l].texels[i] = t.m_maps[l].texels[i];
+		}
+	}
+	SetMipLevel(0);
+}
+
+void tiny3d::Texture::Destroy( void )
 {
 	for (UInt i = 0; i < m_maps.GetSize(); ++i) {
 		delete [] m_maps[i].texels;
 	}
 	m_maps.Destroy();
+	SetMipLevel(0);
 }
 
-void tiny3d::Texture2::ApplyChanges( void )
+bool tiny3d::Texture::ToImage(tiny3d::Image &image) const
+{
+	UInt dim = GetWidth();
+	if (!image.Create(dim, dim)) { return false; }
+	for (UInt y = 0; y < dim; ++y) {
+		for (UInt x = 0; x < dim; ++x) {
+			image.SetColor({ x, y }, GetColor({ x, y }));
+		}
+	}
+	return true;
+}
+
+bool tiny3d::Texture::FromImage(const tiny3d::Image &image)
+{
+	if (image.GetWidth() != image.GetHeight() || !Create(image.GetWidth())) { return false; }
+
+	UInt dim = GetWidth();
+	for (UInt y = 0; y < dim; ++y) {
+		for (UInt x = 0; x < dim; ++x) {
+			SetColor({ x, y }, image.GetColor({ x, y }));
+		}
+	}
+	ApplyChanges();
+	SetMipLevel(0);
+
+	return true;
+}
+
+void tiny3d::Texture::ApplyChanges( void )
 {
 	for (UInt i = 1; i < m_maps.GetSize(); ++i) {
 		UInt j = i - 1;
 		for (UInt y = 0; y < m_maps[i].dimensions; ++y) {
 			for (UInt x = 0; x < m_maps[i].dimensions; ++x) {
-				UInt c00 = m_maps[j].texels[x*2 + y*2 * m_maps[j].dimensions];
-				UInt c10 = m_maps[j].texels[x*2+1 + y*2 * m_maps[j].dimensions];
-				UInt c01 = m_maps[j].texels[x*2 + (y*2+1) * m_maps[j].dimensions];
-				UInt c11 = m_maps[j].texels[x*2+1 + (y*2+1) * m_maps[j].dimensions];
-				m_maps[i].texels[x + y * m_maps[i].dimensions] = UHInt((c00 + c10 + c01 + c11) / 4);
+				SetMipLevel(j);
+				Color c00 = GetColor({ x*2, y*2 });
+				Color c10 = GetColor({ x*2 + 1, y*2 });
+				Color c01 = GetColor({ x*2, y*2 + 1 });
+				Color c11 = GetColor({ x*2 + 1, y*2 + 1 });
+				Vector3 v00 = { Real(c00.r), Real(c00.g), Real(c00.b) };
+				Vector3 v10 = { Real(c10.r), Real(c10.g), Real(c10.b) };
+				Vector3 v01 = { Real(c01.r), Real(c01.g), Real(c01.b) };
+				Vector3 v11 = { Real(c11.r), Real(c11.g), Real(c11.b) };
+				Vector3 vx = (v00 + v10 + v01 + v11) / 4;
+				SetMipLevel(i);
+				SetColor({ x, y }, Color{ Byte(SInt(vx.x)), Byte(SInt(vx.y)), Byte(SInt(vx.z)), 1 });
 			}
 		}
 	}
+	SetMipLevel(0);
 }
 
-UHInt tiny3d::Texture2::GetColor(tiny3d::Vector2 uv, tiny3d::UInt inv_texel_size)
+tiny3d::Color::BlendMode tiny3d::Texture::GetBlendMode1( void ) const
 {
-	// inv_texel_size - the inverse on-screen size of the texel in pixels (1/texel_size)
-	UInt l = Min(DimShift(inv_texel_size), m_maps.GetSize() - 1);
-	UInt x = UInt(SInt(uv.x * m_maps[l].rdimensions)) & m_maps[l].dim_mask;
-	UInt y = UInt(SInt(uv.y * m_maps[l].rdimensions)) & m_maps[l].dim_mask;
-	return m_maps[l].texels[x + (y << m_maps[l].dim_shift)];
+	return m_blend_modes[0];
 }
+
+tiny3d::Color::BlendMode tiny3d::Texture::GetBlendMode2( void ) const
+{
+	return m_blend_modes[1];
+}
+
+void tiny3d::Texture::SetBlendMode1(tiny3d::Color::BlendMode blend_mode)
+{
+	m_blend_modes[0] = blend_mode;
+}
+
+void tiny3d::Texture::SetBlendMode2(tiny3d::Color::BlendMode blend_mode)
+{
+	m_blend_modes[1] = blend_mode;
+}
+
+tiny3d::UInt tiny3d::Texture::GetMipLevel( void ) const
+{
+	return m_level;
+}
+
+void tiny3d::Texture::SetMipLevel(tiny3d::UInt level)
+{
+	m_level = Min(level, m_maps.GetSize() > 0 ? m_maps.GetSize() - 1 : 0);
+}
+
+tiny3d::UInt tiny3d::Texture::GetMipCount( void ) const
+{
+	return m_maps.GetSize();
+}
+
+tiny3d::UInt tiny3d::Texture::GetWidth( void ) const
+{
+	return m_maps.GetSize() > 0 ? m_maps[0].dimensions : 0;
+}
+
+tiny3d::UInt tiny3d::Texture::GetHeight( void ) const
+{
+	return GetWidth();
+}
+
+tiny3d::Color tiny3d::Texture::GetColor(tiny3d::Vector2 uv) const
+{
+	const UInt i = GetIndex(GetXY(uv, m_level));
+	TINY3D_ASSERT(i < m_maps[m_level].dimensions * m_maps[m_level].dimensions);
+	return DecodeTexel(m_maps[m_level].texels[i]);
+}
+
+tiny3d::Color tiny3d::Texture::GetColor(tiny3d::UPoint p) const
+{
+	const UInt i = GetIndex(p);
+	TINY3D_ASSERT(i < m_maps[m_level].dimensions * m_maps[m_level].dimensions);
+	return DecodeTexel(m_maps[m_level].texels[i]);
+}
+
+void tiny3d::Texture::SetColor(tiny3d::UPoint p, tiny3d::Color c)
+{
+	const UInt i = GetIndex(p);
+	TINY3D_ASSERT(i < m_maps[m_level].dimensions * m_maps[m_level].dimensions);
+	m_maps[m_level].texels[i] = EncodeTexel(c);
+}*/
