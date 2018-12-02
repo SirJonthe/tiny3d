@@ -1131,3 +1131,13 @@ tiny3d::Vector3 tiny3d::operator*(const tiny3d::Vector3 &r, const Matrix4x4 &l)
 		tiny3d::Dot(r, Vector3(l[2][0], l[2][1], l[2][2])) + l[2][3]
 	);
 }
+
+tiny3d::Real tiny3d::Area(const tiny3d::Vector2 &a, const tiny3d::Vector2 &b, const tiny3d::Vector2 &c)
+{
+	return ((a.x*b.y - a.y*b.x) + (b.x*c.y - b.y*c.x) + (c.x*a.y - c.y*a.x)) / 2;
+}
+
+tiny3d::Real tiny3d::Area(const tiny3d::Vector3 &a, const tiny3d::Vector3 &b, const tiny3d::Vector3 &c)
+{
+	return Len(Cross(b - a, c - a)) / 2;
+}

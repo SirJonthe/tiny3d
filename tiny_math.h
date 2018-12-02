@@ -296,6 +296,9 @@ Matrix4x4 Inv(const Matrix4x4 &m);
 
 Vector3 operator*(const Vector3 &l, const Matrix4x4 &r);
 
+Real Area(const Vector2 &a, const Vector2 &b, const Vector2 &c);
+Real Area(const Vector3 &a, const Vector3 &b, const Vector3 &c);
+
 }
 
 #endif // TINY_MATH_H

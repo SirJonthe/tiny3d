@@ -245,6 +245,11 @@ void tiny3d::Texture::SetBlendMode2(tiny3d::Color::BlendMode blend_mode)
 	m_blend_modes[1] = blend_mode;
 }
 
+tiny3d::Vector2 tiny3d::Texture::ProjectUV(tiny3d::Vector2 uv) const
+{
+	return Vector2{ uv.x * m_fix_dim, uv.y * m_fix_dim };
+}
+
 void tiny3d::Texture::ApplyChanges( void )
 {
 	// Compress
