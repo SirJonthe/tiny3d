@@ -550,7 +550,7 @@ tiny3d::Vector3 tiny3d::operator/(tiny3d::Vector3 l, tiny3d::SInt r)           {
 
 tiny3d::Vector3 tiny3d::operator-(const tiny3d::Vector3 &u)
 {
-	return tiny3d::Vector3(
+	return Vector3(
 		-u.x,
 		-u.y,
 		-u.z
@@ -559,7 +559,7 @@ tiny3d::Vector3 tiny3d::operator-(const tiny3d::Vector3 &u)
 
 tiny3d::Vector3 tiny3d::Min(const tiny3d::Vector3 &a, const tiny3d::Vector3 &b)
 {
-	return tiny3d::Vector3(
+	return Vector3(
 		Min(a.x, b.x),
 		Min(a.y, b.y),
 		Min(a.z, b.z)
@@ -568,7 +568,7 @@ tiny3d::Vector3 tiny3d::Min(const tiny3d::Vector3 &a, const tiny3d::Vector3 &b)
 
 tiny3d::Vector3 tiny3d::Max(const tiny3d::Vector3 &a, const tiny3d::Vector3 &b)
 {
-	return tiny3d::Vector3(
+	return Vector3(
 		Max(a.x, b.x),
 		Max(a.y, b.y),
 		Max(a.z, b.z)
@@ -582,7 +582,7 @@ tiny3d::Real tiny3d::Dot(const tiny3d::Vector3 &l, const tiny3d::Vector3 &r)
 
 tiny3d::Vector3 tiny3d::Cross(const tiny3d::Vector3 &l, const tiny3d::Vector3 &r)
 {
-	return tiny3d::Vector3(
+	return Vector3(
 		l.y*r.z - l.z*r.y,
 		l.z*r.x - l.x*r.z,
 		l.x*r.y - l.y*r.x
@@ -596,12 +596,17 @@ tiny3d::Real tiny3d::Len(const tiny3d::Vector3 &v)
 
 tiny3d::Vector3 tiny3d::Normalize(const tiny3d::Vector3 &v)
 {
-	Real inv_len = tiny3d::Real(1) / tiny3d::Len(v);
-	return tiny3d::Vector3(
+	Real inv_len = 1 / Len(v);
+	return Vector3(
 		v.x * inv_len,
 		v.y * inv_len,
 		v.z * inv_len
 	);
+}
+
+tiny3d::Real tiny3d::Area(const tiny3d::Vector3 &a, const tiny3d::Vector3 &b, const tiny3d::Vector3 &c)
+{
+	return Len(Cross(b - a, c - a)) / 2;
 }
 
 tiny3d::Vector2::Vector2( void ) :
@@ -737,6 +742,11 @@ tiny3d::Vector2 tiny3d::Normalize(const tiny3d::Vector2 &v)
 		v.x * inv_len,
 		v.y * inv_len
 	);
+}
+
+tiny3d::Real tiny3d::Area(const tiny3d::Vector2 &a, const tiny3d::Vector2 &b, const tiny3d::Vector2 &c)
+{
+	return ((a.x*b.y - a.y*b.x) + (b.x*c.y - b.y*c.x) + (c.x*a.y - c.y*a.x)) / 2;
 }
 
 tiny3d::Matrix3x3::Matrix3x3( void ) :
@@ -1130,14 +1140,4 @@ tiny3d::Vector3 tiny3d::operator*(const tiny3d::Vector3 &r, const Matrix4x4 &l)
 		tiny3d::Dot(r, Vector3(l[1][0], l[1][1], l[1][2])) + l[1][3],
 		tiny3d::Dot(r, Vector3(l[2][0], l[2][1], l[2][2])) + l[2][3]
 	);
-}
-
-tiny3d::Real tiny3d::Area(const tiny3d::Vector2 &a, const tiny3d::Vector2 &b, const tiny3d::Vector2 &c)
-{
-	return ((a.x*b.y - a.y*b.x) + (b.x*c.y - b.y*c.x) + (c.x*a.y - c.y*a.x)) / 2;
-}
-
-tiny3d::Real tiny3d::Area(const tiny3d::Vector3 &a, const tiny3d::Vector3 &b, const tiny3d::Vector3 &c)
-{
-	return Len(Cross(b - a, c - a)) / 2;
 }

@@ -174,6 +174,7 @@ Real    Dot(const Vector3 &l, const Vector3 &r);
 Vector3 Cross(const Vector3 &l, const Vector3 &r);
 Real    Len(const Vector3 &v);
 Vector3 Normalize(const Vector3 &v);
+Real    Area(const Vector3 &a, const Vector3 &b, const Vector3 &c);
 
 class Vector2
 {
@@ -215,6 +216,7 @@ Vector2 Max(const Vector2 &a, const Vector2 &b);
 Real    Dot(const Vector2 &l, const Vector2 &r);
 Real    Len(const Vector2 &v);
 Vector2 Normalize(const Vector2 &v);
+Real    Area(const Vector2 &a, const Vector2 &b, const Vector2 &c);
 
 class Matrix3x3
 {
@@ -295,9 +297,6 @@ Vector3   Translation(const Matrix4x4 &transform);
 Matrix4x4 Inv(const Matrix4x4 &m);
 
 Vector3 operator*(const Vector3 &l, const Matrix4x4 &r);
-
-Real Area(const Vector2 &a, const Vector2 &b, const Vector2 &c);
-Real Area(const Vector3 &a, const Vector3 &b, const Vector3 &c);
 
 }
 

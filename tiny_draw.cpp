@@ -45,102 +45,83 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, co
 	DrawPoint(dst, zbuf, ToW(a), tex, dst_rect);
 }
 
-struct RayMarch2D
+void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	Vector2 origin;
-	Vector2 lengths;
-	Vector2 direction;
-	Vector2 delta;
-	SInt    xyz[2];
-	SInt    step[2];
-	UInt    side;
-
-	void SetInitialState(const Vector2 &p_ray_origin, const Vector2 &p_ray_dir);
-	void Step( void );
-	SInt GetX( void ) const { return xyz[0]; }
-	SInt GetY( void ) const { return xyz[1]; }
-};
-
-void RayMarch2D::SetInitialState(const Vector2 &p_ray_origin, const Vector2 &p_ray_dir)
-{
-	side = 0;
-	origin = p_ray_origin;
-	direction = p_ray_dir;
-	xyz[0] = SInt( p_ray_origin[0] );
-	xyz[1] = SInt( p_ray_origin[1] );
-	for (UInt i = 0; i < 2; ++i) {
-		delta[i] = Sqrt(1 + (direction[(i + 1) & 1] * direction[(i + 1) & 1]) / (direction[i] * direction[i]));
-		if (direction[i] < Real(0)) {
-			step[i] = -1;
-			lengths[i] = (p_ray_origin[i] - xyz[i]) * delta[i];
-		} else {
-			step[i] = 1;
-			lengths[i] = (xyz[i] + 1 - p_ray_origin[i]) * delta[i];
-		}
+	SInt min_x = 0;
+	SInt max_x = SInt(dst.GetWidth()) - 1;
+	SInt min_y = 0;
+	SInt max_y = SInt(dst.GetHeight()) - 1;
+	if (dst_rect != nullptr) {
+		min_y = tiny3d::Max(min_y, SInt(dst_rect->a.y));
+		max_y = tiny3d::Min(max_y, SInt(dst_rect->b.y) - 1);
+		min_x = tiny3d::Max(min_x, SInt(dst_rect->a.x));
+		max_x = tiny3d::Min(max_x, SInt(dst_rect->b.x) - 1);
 	}
-	Step(); // Step once to finish initialization (setting m_side to 0 or -1 breaks GetDistance())
-}
+	const SInt dx = b.p.x - a.p.x;
+	const SInt dy = b.p.y - a.p.y;
+	const Vector3 dv = Vector3{ Real(dx), Real(dy), b.w - a.w };
+	const Vector2 dt = b.t - a.t;
+	const Vector3 dc = b.c - a.c;
+	const SInt steps = Abs(dx) > Abs(dy) ? Abs(dx) : Abs(dy);
+	const Vector3 v_inc = dv / steps;
+	const Vector2 t_inc = dt / steps;
+	const Vector3 c_inc = dc / steps;
 
-void RayMarch2D::Step( void )
-{
-	side = (lengths[0] > lengths[1]) ? 1 : 0;
-	lengths[side] += delta[side];
-	xyz[side] += step[side];
-}
+	// Clip to dst_rect
+		// Do this in constant time so we do not just skip over pixels one at a time in the inner-loop
+	// DETERMINE IF LINE IS TOO LONG - RECURSIVELY CALL DrawLine with midpoints
 
-/*void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
-{
-	if (a.p.x == b.p.x && a.p.y == b.p.y) {	return; }
+	Vector3 v = Vector3{ Real(a.p.x), Real(a.p.y), a.w };
+	Vector2 t = a.t;
+	Vector3 c = a.c;
+	for (SInt i = 0; i <= steps; i++) {
+		Point p = { SInt(v.x),SInt(v.y) };
+		if (p.x >= min_x && p.x <= max_x && p.y >= min_y && p.y <= max_y) {
 
-	// Clip lines to screen edges
+			const UPoint q     = { UInt(p.x), UInt(p.y) };
+			const Color  pixel = dst.GetColor(q);
+			const UInt   zi    = q.x + q.y * dst.GetWidth();
+			const Real   sz    = 1 / v.z;
+			const Real   dz    = (zbuf != nullptr) ? (*zbuf)[zi] : Real::Inf();
 
-	Vector2 a_vec = Vector2(Real(a.p.x), Real(a.p.y));
-	Vector2 b_vec = Vector2(Real(b.p.x), Real(b.p.y));
-	RayMarch2D march;
-	march.SetInitialState(a_vec, Normalize(b_vec - a_vec));
-	Real l0 = Real(1);
-	Real l1 = Real(0);
+			if (sz <= dz && pixel.blend != tiny3d::Color::BlendMode_Transparent) { // use transparency bit as a 1-bit stencil
 
-	while (march.GetX() != b.p.x && march.GetY() != b.p.y) {
+				const Vector2 uv = t * sz;
+				const Vector3 tcol = c * sz;
+				const Color col = {
+					Byte(SInt(tcol.x)),
+					Byte(SInt(tcol.y)),
+					Byte(SInt(tcol.z)),
+					Color::BlendMode_Solid
+				};
 
-		const UPoint q     = { UInt(march.GetX()), UInt(march.GetY()) };
-		const Color  pixel = dst.GetColor(q);
-		const UInt   zi    = q.x + q.y * dst.GetWidth();
-		const Real   sz    = 1 / (a.w * l0 + b.w * l1);
-		const Real   dz    = (zbuf != nullptr) ? (*zbuf)[zi] : Real::Inf();
+				const Color texel = (tex != nullptr) ? tex->GetColor(uv) : Color{ 255, 255, 255, Color::BlendMode_Solid };
 
-		if (sz <= dz && pixel.blend != Color::BlendMode_Transparent) {
-			const Vector2 uv = (a.t * l0 + b.t * l1) * sz;
-			const Vector3 tcol = (a.c * l0 + b.c * l1) * sz;
-			const Color col = {
-				Byte(SInt(tcol.x)),
-				Byte(SInt(tcol.y)),
-				Byte(SInt(tcol.z)),
-				Color::BlendMode_Solid
-			};
-			const Color texel = (tex != nullptr) ? tex->GetColor(uv) : Color{ 255, 255, 255, Color::BlendMode_Solid };
-
-			switch (texel.blend)
-			{
-			case tiny3d::Color::BlendMode_Emissive:
-				dst.SetColor(q, Dither2x2(texel, q));
-				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
-				break;
-			case tiny3d::Color::BlendMode_Solid:
-				dst.SetColor(q, Dither2x2(texel * col, q));
-				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
-				break;
-			default: break;
+				switch (texel.blend)
+				{
+				case tiny3d::Color::BlendMode_Emissive:
+					dst.SetColor(q, Dither2x2(texel, q));
+					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+					break;
+				case tiny3d::Color::BlendMode_Solid:
+					dst.SetColor(q, Dither2x2(texel * col, q));
+					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+					break;
+				default: break;
+				}
 			}
+
 		}
-		march.Step();
+		v += v_inc;
+		t += t_inc;
+		c += c_inc;
 	}
 }
 
 void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	DrawLine(dst, zbuf, ToW(a), ToW(b), tex, dst_rect);
-}*/
+}
 
 tiny3d::SXInt DetermineHalfspace(tiny3d::Point a, tiny3d::Point b, tiny3d::Point point)
 {
@@ -259,7 +240,7 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 
 					const Real L0 = l0 * sz;
 					const Real L1 = l1 * sz;
-					const Real L2 = l2 * sz; // THESE CAN BE USED TO DETERMINE MIP LEVEL TO USE FOR TEXTURES
+					const Real L2 = l2 * sz;
 
 					//const Vector2 uv   = (a.t * l0 + b.t * l1 + c.t * l2) * sz;
 					//const Vector3 tcol = (a.c * l0 + b.c * l1 + c.c * l2) * sz;
