@@ -57,6 +57,11 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 		min_x = tiny3d::Max(min_x, SInt(dst_rect->a.x));
 		max_x = tiny3d::Min(max_x, SInt(dst_rect->b.x) - 1);
 	}
+
+	// Clip to dst_rect
+		// Do this in constant time so we do not just skip over pixels one at a time in the inner-loop
+	// DETERMINE IF LINE IS TOO LONG - RECURSIVELY CALL DrawLine with midpoints
+
 	const SInt dx = b.p.x - a.p.x;
 	const SInt dy = b.p.y - a.p.y;
 	const Vector3 dv = Vector3{ Real(dx), Real(dy), b.w - a.w };
@@ -66,10 +71,6 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 	const Vector3 v_inc = dv / steps;
 	const Vector2 t_inc = dt / steps;
 	const Vector3 c_inc = dc / steps;
-
-	// Clip to dst_rect
-		// Do this in constant time so we do not just skip over pixels one at a time in the inner-loop
-	// DETERMINE IF LINE IS TOO LONG - RECURSIVELY CALL DrawLine with midpoints
 
 	Vector3 v = Vector3{ Real(a.p.x), Real(a.p.y), a.w };
 	Vector2 t = a.t;
