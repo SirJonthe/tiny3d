@@ -35,10 +35,10 @@ struct Color
 {
 	enum BlendMode
 	{
-		BlendMode_Transparent,   // don't render the pixel
-		BlendMode_Emissive,      // don't add lighting to the pixel
-		BlendMode_DitheredAlpha, // checkerboard alpha
-		BlendMode_Solid,         // render the pixel solid with lighting
+		Transparent,   // don't render the pixel
+		Emissive,      // don't add lighting to the pixel
+		DitheredAlpha, // checkerboard alpha
+		Solid,         // render the pixel solid with lighting
 	};
 
 	Byte r, g, b, blend;

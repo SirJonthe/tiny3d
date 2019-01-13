@@ -25,6 +25,17 @@ UInt  Interleave16Bits(UHInt a, UHInt b);
 UHInt Interleave8Bits(Byte a, Byte b);
 SInt  Sign(SInt x);
 
+template < typename int_t >
+void SetBit(int_t &bits, tiny3d::UInt i) { bits |= (1 << i); }
+template < typename int_t >
+void ClearBit(int_t &bits, tiny3d::UInt i) { bits &= (~(1 << i)); }
+template < typename int_t >
+void ToggleBit(int_t &bits, tiny3d::UInt i) { bits ^= (1 << i); }
+template < typename int_t >
+bool TestBit(int_t bits, tiny3d::UInt i) { return (bits & (1 << i)) != 0; }
+template < typename int_t >
+int_t ReadBit(int_t bits, tiny3d::UInt i) { return (bits >> i) & 1; }
+
 // if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
 class Real
 {
