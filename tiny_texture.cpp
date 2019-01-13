@@ -188,7 +188,6 @@ bool tiny3d::Texture::FromImage(const tiny3d::Image &image)
 			SetColor({ x, y }, image.GetColor({ x, y }));
 		}
 	}
-	ApplyChanges();
 
 	return true;
 }
