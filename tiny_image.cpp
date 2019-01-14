@@ -36,7 +36,7 @@ tiny3d::Color tiny3d::Image::DecodePixel(tiny3d::UHInt pixel) const
 	color.r = Byte(r);
 	color.g = Byte(g);
 	color.b = Byte(b);
-	color.blend = (pixel & 0x8000) ? Color::BlendMode_Solid : Color::BlendMode_Transparent;
+	color.blend = (pixel & 0x8000) ? Color::Solid : Color::Transparent;
 	return color;
 }
 

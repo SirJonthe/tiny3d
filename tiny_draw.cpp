@@ -15,22 +15,22 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, co
 		const Real   sz    = 1 / a.w;
 		const Real   dz    = (zbuf != nullptr) ? (*zbuf)[zi] : Real::Inf();
 
-		if (sz <= dz && pixel.blend != Color::BlendMode_Transparent) {
+		if (sz <= dz && pixel.blend != Color::Transparent) {
 			const Color col = {
 				Byte(SInt(a.c.x * sz)),
 				Byte(SInt(a.c.y * sz)),
 				Byte(SInt(a.c.z * sz)),
-				Color::BlendMode_Solid
+				Color::Solid
 			};
-			const Color texel = (tex != nullptr) ? tex->GetColor(a.t * sz) : Color{ 255, 255, 255, Color::BlendMode_Solid };
+			const Color texel = (tex != nullptr) ? tex->GetColor(a.t * sz) : Color{ 255, 255, 255, Color::Solid };
 
 			switch (texel.blend)
 			{
-			case tiny3d::Color::BlendMode_Emissive:
+			case tiny3d::Color::Emissive:
 				dst.SetColor(q, Dither2x2(texel, q));
 				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 				break;
-			case tiny3d::Color::BlendMode_Solid:
+			case tiny3d::Color::Solid:
 				dst.SetColor(q, Dither2x2(texel * col, q));
 				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 				break;
@@ -85,7 +85,7 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 			const Real   sz    = 1 / v.z;
 			const Real   dz    = (zbuf != nullptr) ? (*zbuf)[zi] : Real::Inf();
 
-			if (sz <= dz && pixel.blend != tiny3d::Color::BlendMode_Transparent) { // use transparency bit as a 1-bit stencil
+			if (sz <= dz && pixel.blend != tiny3d::Color::Transparent) { // use transparency bit as a 1-bit stencil
 
 				const Vector2 uv = t * sz;
 				const Vector3 tcol = c * sz;
@@ -93,18 +93,18 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 					Byte(SInt(tcol.x)),
 					Byte(SInt(tcol.y)),
 					Byte(SInt(tcol.z)),
-					Color::BlendMode_Solid
+					Color::Solid
 				};
 
-				const Color texel = (tex != nullptr) ? tex->GetColor(uv) : Color{ 255, 255, 255, Color::BlendMode_Solid };
+				const Color texel = (tex != nullptr) ? tex->GetColor(uv) : Color{ 255, 255, 255, Color::Solid };
 
 				switch (texel.blend)
 				{
-				case tiny3d::Color::BlendMode_Emissive:
+				case tiny3d::Color::Emissive:
 					dst.SetColor(q, Dither2x2(texel, q));
 					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 					break;
-				case tiny3d::Color::BlendMode_Solid:
+				case tiny3d::Color::Solid:
 					dst.SetColor(q, Dither2x2(texel * col, q));
 					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 					break;
@@ -237,7 +237,7 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 				const Real   sz    = 1 / (a.w * l0 + b.w * l1 + c.w * l2);
 				const Real   dz    = (zbuf != nullptr) ? (*zbuf)[zi] : Real::Inf();
 
-				if (sz <= dz && pixel.blend != tiny3d::Color::BlendMode_Transparent) { // use transparency bit as a 1-bit stencil
+				if (sz <= dz && pixel.blend != tiny3d::Color::Transparent) { // use transparency bit as a 1-bit stencil
 
 					const Real L0 = l0 * sz;
 					const Real L1 = l1 * sz;
@@ -251,18 +251,18 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 						Byte(SInt(tcol.x)),
 						Byte(SInt(tcol.y)),
 						Byte(SInt(tcol.z)),
-						Color::BlendMode_Solid
+						Color::Solid
 					};
 
-					const Color texel = (tex != nullptr) ? tex->GetColor(uv) : Color{ 255, 255, 255, Color::BlendMode_Solid };
+					const Color texel = (tex != nullptr) ? tex->GetColor(uv) : Color{ 255, 255, 255, Color::Solid };
 
 					switch (texel.blend)
 					{
-					case tiny3d::Color::BlendMode_Emissive:
+					case tiny3d::Color::Emissive:
 						dst.SetColor(q, Dither2x2(texel, q));
 						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 						break;
-					case tiny3d::Color::BlendMode_Solid:
+					case tiny3d::Color::Solid:
 						dst.SetColor(q, Dither2x2(texel * col, q));
 						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 						break;

@@ -46,10 +46,12 @@ private:
 	Index           GetIndex(tiny3d::UPoint p) const;
 	tiny3d::UHInt   EncodeTexel(tiny3d::Color color) const;
 	tiny3d::Color   DecodeTexel(tiny3d::UHInt texel) const;
+	tiny3d::Color   GetColor(tiny3d::Texture::Index i) const;
 
 public:
 	 Texture( void );
 	 explicit Texture(tiny3d::UInt dimension);
+	 explicit Texture(const tiny3d::Image &img);
 	 Texture(const tiny3d::Texture &t);
 	~Texture( void );
 

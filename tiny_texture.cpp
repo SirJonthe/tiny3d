@@ -12,7 +12,7 @@ static constexpr tiny3d::UInt CCC_COUNT_SHIFT =  4;
 
 bool tiny3d::Texture::SetDimension(tiny3d::UInt dimension)
 {
-	const bool is_valid = dimension >= MinDimensions() && dimension <= MaxDimension() && tiny3d::IsPow2(dimension);
+	const bool is_valid = dimension >= MinDimension() && dimension <= MaxDimension() && tiny3d::IsPow2(dimension);
 	if (is_valid) {
 		m_dimension   = dimension;
 		m_dim_mask    = dimension - 1;
@@ -124,12 +124,24 @@ tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
 	return color;
 }
 
-tiny3d::Texture::Texture( void ) : m_texels(nullptr), m_dimension(0), m_dim_mask(0), m_dim_shift(0), m_fix_dim(0), m_blend_modes{ Color::BlendMode_Transparent, Color::BlendMode_Solid }
+tiny3d::Color tiny3d::Texture::GetColor(tiny3d::Texture::Index i) const
+{
+	TINY3D_ASSERT(i.block < m_blocks * m_blocks);
+	const CCCBlock &b = m_texels[i.block];
+	return DecodeTexel(b.colors[ReadBit(b.color_idx, i.bit)]);
+}
+
+tiny3d::Texture::Texture( void ) : m_texels(nullptr), m_dimension(0), m_dim_mask(0), m_dim_shift(0), m_fix_dim(0), m_blocks(0), m_block_mask(0), m_block_shift(0), m_fix_blocks(0), m_blend_modes{ Color::Transparent, Color::Solid }
 {}
 
 tiny3d::Texture::Texture(tiny3d::UInt dimension) : Texture()
 {
 	Create(dimension);
+}
+
+tiny3d::Texture::Texture(const tiny3d::Image &img) : Texture()
+{
+	FromImage(img);
 }
 
 tiny3d::Texture::Texture(const tiny3d::Texture &t) : Texture()
@@ -147,7 +159,7 @@ bool tiny3d::Texture::Create(tiny3d::UInt dimension)
 	if (dimension != m_dimension) {
 		delete m_texels;
 		if (SetDimension(dimension)) {
-			m_texels = new UHInt[m_blocks * m_blocks];
+			m_texels = new CCCBlock[m_blocks * m_blocks];
 		} else {
 			m_texels = nullptr;
 			return false;
@@ -180,7 +192,7 @@ bool tiny3d::Texture::ToImage(tiny3d::Image &image) const
 	if (!image.Create(dim, dim)) { return false; }
 	for (UInt y = 0; y < dim; ++y) {
 		for (UInt x = 0; x < dim; ++x) {
-			image.SetColor({ x, y }, GetColor({ x, y }));
+			image.SetColor({ x, y }, GetColor(UPoint{ x, y }));
 		}
 	}
 	return true;
@@ -208,7 +220,7 @@ tiny3d::UHInt LookupBits(const tiny3d::Image &img, tiny3d::UPoint p, tiny3d::UIn
 	for (UInt sy = 0; sy < CCC_DIM; ++sy) {
 		for (UInt sx = 0; sx < CCC_DIM; ++sx) {
 			Byte lum = Illum(img.GetColor(UPoint{ p.x + sx, p.y + sy }));
-			UInt i = sx + sy * CCC_X;
+			UInt i = sx + sy * CCC_DIM;
 			if (lum <= avg_lum) {
 				ClearBit(lookup, i);
 			} else {
@@ -259,7 +271,7 @@ bool tiny3d::Texture::FromImage(const tiny3d::Image &image)
 	for (UInt y = 0; y < dim; y += CCC_DIM) {
 		for (UInt x = 0; x < dim; x += CCC_DIM) {
 
-			UPoint p = { mx, my };
+			UPoint p = { x, y };
 
 			// calculate the average luminance value per 4x4 block
 			UInt avg_lum = AverageLuminance(image, p);
@@ -269,8 +281,8 @@ bool tiny3d::Texture::FromImage(const tiny3d::Image &image)
 			block.color_idx = LookupBits(image, p, avg_lum);
 
 			// determine representative color by averaging the colors on either side of the average luminance value
-			block.color[0] = EncodePixel(AverageColor0(image, p, block.color_idx));
-			block.color[1] = EncodePixel(AverageColor1(image, p, block.color_idx));
+			block.colors[0] = EncodeTexel(AverageColor0(image, p, block.color_idx));
+			block.colors[1] = EncodeTexel(AverageColor1(image, p, block.color_idx));
 		}
 	}
 
@@ -285,13 +297,6 @@ tiny3d::UInt tiny3d::Texture::GetWidth( void ) const
 tiny3d::UInt tiny3d::Texture::GetHeight( void ) const
 {
 	return m_dimension;
-}
-
-tiny3d::Color tiny3d::Texture::GetColor(tiny3d::Texture::Index i) const
-{
-	TINY3D_ASSERT(i.block < m_blocks * m_blocks);
-	const CCCBlock &b = m_texels[i.block];
-	return DecodeTexel(b.colors[ReadBit(b.color_idx, i.bit)]);
 }
 
 tiny3d::Color tiny3d::Texture::GetColor(tiny3d::Vector2 uv) const
@@ -433,7 +438,7 @@ tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
 	return color;
 }
 
-tiny3d::Texture::Texture( void ) : m_texels(nullptr), m_dimension(0), m_dim_mask(0), m_dim_shift(0), m_fix_dim(0), m_blend_modes{ Color::BlendMode_Transparent, Color::BlendMode_Solid }
+tiny3d::Texture::Texture( void ) : m_texels(nullptr), m_dimension(0), m_dim_mask(0), m_dim_shift(0), m_fix_dim(0), m_blend_modes{ Color::Transparent, Color::Solid }
 {}
 
 tiny3d::Texture::Texture(tiny3d::UInt dimension) : Texture()
