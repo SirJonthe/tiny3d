@@ -93,7 +93,7 @@ void tiny3d::Image::Destroy( void )
 void tiny3d::Image::Copy(const tiny3d::Image &img)
 {
 	Create(img.m_width, img.m_height);
-	for (UHInt i = 0; i < m_width*m_height; ++i) {
+	for (UInt i = 0; i < m_width*m_height; ++i) {
 		m_pixels[i] = img.m_pixels[i];
 	}
 }
