@@ -37,6 +37,8 @@ public:
 	tiny3d::UInt  GetHeight( void ) const;
 	tiny3d::Color GetColor(tiny3d::UPoint p) const;
 	void          SetColor(tiny3d::UPoint p, tiny3d::Color color);
+	tiny3d::UHInt Debug_GetPixel(tiny3d::UPoint p) const;
+	void          Debug_SetPixel(tiny3d::UPoint p, tiny3d::UHInt color);
 
 	tiny3d::Image &operator=(const tiny3d::Image &i);
 

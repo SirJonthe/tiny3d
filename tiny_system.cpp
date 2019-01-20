@@ -55,9 +55,9 @@ void tiny3d::System::Video::Blit(const Image &src, const tiny3d::URect *dst_rect
 		unsigned char *pixels = pixel_row;
 		for (UXInt x = x_start; x < x_end; ++x) {
 			Color c = src.GetColor({UInt((x * x_frac) >> 16), UInt((y * y_frac) >> 16)});
-			pixels[0] = c.r;
+			pixels[0] = c.b;
 			pixels[1] = c.g;
-			pixels[2] = c.b;
+			pixels[2] = c.r;
 			pixels += SDL_GetVideoSurface()->format->BytesPerPixel;
 		}
 		pixel_row += SDL_GetVideoSurface()->pitch;

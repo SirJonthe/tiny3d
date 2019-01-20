@@ -10,14 +10,14 @@ tiny3d::UHInt tiny3d::Image::EncodePixel(tiny3d::Color color) const
 	UInt g = (((UInt(color.g) + 1) * 0x100) - 1) >> 11;
 	UInt b = (((UInt(color.b) + 1) * 0x100) - 1) >> 11;
 	UInt stencil = UInt(color.blend & 1) << 15;
-	UHInt pixel = UHInt(stencil) | UHInt(r) | UHInt(g << 5) | UHInt(b << 10);
+	UHInt pixel = UHInt(stencil) | UHInt(b << 10) | UHInt(g << 5) | UHInt(r);
 	return pixel;
 }
 
 tiny3d::Color tiny3d::Image::DecodePixel(tiny3d::UHInt pixel) const
 {
 	// bits = M BBBBB GGGGG RRRRR
-	UInt b =
+	UInt r =
 		(((pixel & 0x001F) + 1)        // convert channel to number with 1 bit of range and 5 bits of precision
 		* 0x100                        // multiply by 1 with 1 bit of range and 8 bits of precision, resulting in a number with 13 bits of precision
 		- 1)                           // subtract 1 to compress number back to 0 bits of range and 13 bits of precision
@@ -27,7 +27,7 @@ tiny3d::Color tiny3d::Image::DecodePixel(tiny3d::UHInt pixel) const
 		* 0x100
 		- 1)
 		>> 5;
-	UInt r =
+	UInt b =
 		((((pixel & 0x7C00) >> 10) + 1)
 		* 0x100
 		- 1)
@@ -152,6 +152,20 @@ void tiny3d::Image::SetColor(tiny3d::UPoint p, tiny3d::Color color)
 	UInt i = p.x + m_width * p.y;
 	TINY3D_ASSERT(i < m_width * m_height);
 	m_pixels[i] = EncodePixel(color);
+}
+
+tiny3d::UHInt tiny3d::Image::Debug_GetPixel(tiny3d::UPoint p) const
+{
+	UInt i = p.x + m_width * p.y;
+	TINY3D_ASSERT(i < m_width * m_height);
+	return m_pixels[i];
+}
+
+void tiny3d::Image::Debug_SetPixel(tiny3d::UPoint p, tiny3d::UHInt color)
+{
+	UInt i = p.x + m_width * p.y;
+	TINY3D_ASSERT(i < m_width * m_height);
+	m_pixels[i] = color;
 }
 
 tiny3d::Image &tiny3d::Image::operator=(const tiny3d::Image &i)

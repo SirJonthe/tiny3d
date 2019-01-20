@@ -87,7 +87,7 @@ tiny3d::Texture::Index tiny3d::Texture::GetIndex(tiny3d::UPoint p) const
 	return Index{ GetMortonIndex(BlockXY(p)), BitI(p) };
 }
 
-tiny3d::UHInt tiny3d::Texture::EncodeTexel(tiny3d::Color color) const
+/*tiny3d::UHInt tiny3d::Texture::EncodeTexel(tiny3d::Color color) const
 {
 	// bits = M BBBB GGGG RRRR
 	UInt r = (((UInt(color.r) + 1) * 0x100) - 1) >> 11;
@@ -120,7 +120,45 @@ tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
 	color.r = Byte(r);
 	color.g = Byte(g);
 	color.b = Byte(b);
-	color.blend = (texel & 0x8000) ? m_blend_modes[1] : m_blend_modes[0];
+	color.blend = (texel & 0x8000) ? m_blend_modes[0] : m_blend_modes[1];
+	return color;
+}*/
+
+tiny3d::UHInt tiny3d::Texture::EncodeTexel(tiny3d::Color color) const
+{
+
+	// bits = M BBBBB GGGGG RRRRR
+	UInt r = (((UInt(color.r) + 1) * 0x100) - 1) >> 11;
+	UInt g = (((UInt(color.g) + 1) * 0x100) - 1) >> 11;
+	UInt b = (((UInt(color.b) + 1) * 0x100) - 1) >> 11;
+	UInt stencil = UInt(color.blend & 1) << 15;
+	UHInt pixel = UHInt(stencil) | UHInt(b << 10) | UHInt(g << 5) | UHInt(r);
+	return pixel;
+}
+
+tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
+{
+	// bits = M BBBBB GGGGG RRRRR
+	UInt r =
+		(((texel & 0x001F) + 1)        // convert channel to number with 1 bit of range and 5 bits of precision
+		* 0x100                        // multiply by 1 with 1 bit of range and 8 bits of precision, resulting in a number with 13 bits of precision
+		- 1)                           // subtract 1 to compress number back to 0 bits of range and 13 bits of precision
+		>> 5;                          // shift away 5 bits of precision to keep a number with 0 bits of range and 8 bits of precision
+	UInt g =
+		((((texel & 0x03E0) >> 5) + 1)
+		* 0x100
+		- 1)
+		>> 5;
+	UInt b =
+		((((texel & 0x7C00) >> 10) + 1)
+		* 0x100
+		- 1)
+		>> 5;
+	Color color;
+	color.r = Byte(r);
+	color.g = Byte(g);
+	color.b = Byte(b);
+	color.blend = (texel & 0x8000) ? m_blend_modes[0] : m_blend_modes[1];
 	return color;
 }
 
