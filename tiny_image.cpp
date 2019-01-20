@@ -154,20 +154,6 @@ void tiny3d::Image::SetColor(tiny3d::UPoint p, tiny3d::Color color)
 	m_pixels[i] = EncodePixel(color);
 }
 
-tiny3d::UHInt tiny3d::Image::Debug_GetPixel(tiny3d::UPoint p) const
-{
-	UInt i = p.x + m_width * p.y;
-	TINY3D_ASSERT(i < m_width * m_height);
-	return m_pixels[i];
-}
-
-void tiny3d::Image::Debug_SetPixel(tiny3d::UPoint p, tiny3d::UHInt color)
-{
-	UInt i = p.x + m_width * p.y;
-	TINY3D_ASSERT(i < m_width * m_height);
-	m_pixels[i] = color;
-}
-
 tiny3d::Image &tiny3d::Image::operator=(const tiny3d::Image &i)
 {
 	if (this != &i) {
