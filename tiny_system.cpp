@@ -13,13 +13,13 @@
 
 using namespace tiny3d;
 
-bool tiny3d::System::Init(int width, int height, const std::string &caption)
+bool tiny3d::System::Init(tiny3d::UInt width, tiny3d::UInt height, const std::string &caption)
 {
 #ifdef XLIB_THREADS
 	if (XInitThreads() != True) { return false; }
 #endif
 	if (SDL_Init(SDL_INIT_VIDEO) == -1) { return false; }
-	if (SDL_SetVideoMode(width, height, 24, SDL_SWSURFACE) == nullptr) { return false; }
+	if (SDL_SetVideoMode(int(width), int(height), 24, SDL_SWSURFACE) == nullptr) { return false; }
 	SDL_WM_SetCaption(caption.c_str(), nullptr);
 	return true;
 }
@@ -73,12 +73,12 @@ void tiny3d::System::Video::Update(const tiny3d::URect *dst_rect)
 	}
 }
 
-int tiny3d::System::Video::Width( void )
+tiny3d::UInt tiny3d::System::Video::Width( void )
 {
-	return SDL_GetVideoSurface()->w;
+	return tiny3d::UInt(SDL_GetVideoSurface()->w);
 }
 
-int tiny3d::System::Video::Height( void )
+tiny3d::UInt tiny3d::System::Video::Height( void )
 {
-	return SDL_GetVideoSurface()->h;
+	return tiny3d::UInt(SDL_GetVideoSurface()->h);
 }

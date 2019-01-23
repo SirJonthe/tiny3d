@@ -35,16 +35,16 @@ typedef uint8_t  Byte;
 
 namespace System
 {
-	bool Init(int width, int height, const std::string &caption);
-	void Close( void );
-	Real Time( void );
+	bool         Init(tiny3d::UInt width, tiny3d::UInt height, const std::string &caption);
+	void         Close( void );
+	tiny3d::Real Time( void );
 
 	namespace Video
 	{
 		void Blit(const Image &src, const URect *dst_rect = nullptr);
 		void Update(const URect *dst_rect = nullptr);
-		int  Width( void );
-		int  Height( void );
+		tiny3d::UInt  Width( void );
+		tiny3d::UInt  Height( void );
 	}
 
 	namespace Audio
