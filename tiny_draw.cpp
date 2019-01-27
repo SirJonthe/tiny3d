@@ -27,7 +27,7 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, co
 			switch (texel.blend)
 			{
 			case tiny3d::Color::Emissive:
-				dst.SetColor(q, Dither2x2(texel, q));
+				dst.SetColor(q, texel);
 				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 				break;
 			case tiny3d::Color::Solid:
@@ -101,7 +101,7 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 				switch (texel.blend)
 				{
 				case tiny3d::Color::Emissive:
-					dst.SetColor(q, Dither2x2(texel, q));
+					dst.SetColor(q, texel);
 					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 					break;
 				case tiny3d::Color::Solid:
@@ -158,7 +158,6 @@ WVertex MidVertex(const WVertex &a, const WVertex &b)
 
 void DrawSubdivTri(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::WVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-
 	WVertex ab = MidVertex(a, b);
 	WVertex bc = MidVertex(b, c);
 	WVertex ca = MidVertex(c, a);
@@ -259,7 +258,7 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 					switch (texel.blend)
 					{
 					case tiny3d::Color::Emissive:
-						dst.SetColor(q, Dither2x2(texel, q));
+						dst.SetColor(q, texel);
 						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 						break;
 					case tiny3d::Color::Solid:
