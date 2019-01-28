@@ -59,8 +59,44 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 	}
 
 	// Clip to dst_rect
-		// Do this in constant time so we do not just skip over pixels one at a time in the inner-loop
-	// DETERMINE IF LINE IS TOO LONG - RECURSIVELY CALL DrawLine with midpoints
+	{
+		if (a.p.x > b.p.x) { Swap(a, b); }
+		if (a.p.x > max_x) { return; }
+		if (b.p.x < min_x) { return; }
+		Real scale_a = Real(1);
+		Real scale_b = Real(1);
+		Real diff = Real(b.p.x - a.p.x);
+		if (a.p.x < min_x) {
+			scale_a = -(a.p.x - min_x) / diff;
+		}
+		if (b.p.x > max_x) {
+			scale_b = (b.p.x - max_x) / diff;
+		}
+
+		if (a.p.y > b.p.y) {
+			Swap(a, b);
+			Swap(scale_a, scale_b);
+		}
+		if (a.p.y > max_y) { return; }
+		if (b.p.y < min_x) { return; }
+		diff = Real(b.p.y - a.p.y);
+		if (a.p.y < min_y) {
+			scale_a = Min(scale_a, -(a.p.y - min_y) / diff);
+		}
+		if (b.p.y > max_y) {
+			scale_b = Min(scale_b, (b.p.y - max_y) / diff);
+		}
+
+		a.p = Point{ SInt(a.p.x * scale_a), SInt(a.p.y * scale_a) };
+		a.t *= scale_a;
+		a.c *= scale_a;
+		a.w *= scale_a;
+
+		b.p = Point{ SInt(b.p.x * scale_b), SInt(b.p.y * scale_b) };
+		b.t *= scale_b;
+		b.c *= scale_b;
+		b.w *= scale_b;
+	}
 
 	const SInt dx = b.p.x - a.p.x;
 	const SInt dy = b.p.y - a.p.y;
@@ -77,7 +113,7 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 	Vector3 c = a.c;
 	for (SInt i = 0; i <= steps; i++) {
 		Point p = { SInt(v.x),SInt(v.y) };
-		if (p.x >= min_x && p.x <= max_x && p.y >= min_y && p.y <= max_y) {
+//		if (p.x >= min_x && p.x <= max_x && p.y >= min_y && p.y <= max_y) {
 
 			const UPoint q     = { UInt(p.x), UInt(p.y) };
 			const Color  pixel = dst.GetColor(q);
@@ -112,7 +148,7 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, con
 				}
 			}
 
-		}
+//		}
 		v += v_inc;
 		t += t_inc;
 		c += c_inc;
