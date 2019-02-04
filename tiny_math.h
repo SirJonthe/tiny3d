@@ -11,6 +11,7 @@ template < typename type_t > type_t Min(type_t a, type_t b)           { return a
 template < typename type_t > type_t Max(type_t a, type_t b)           { return a > b ? a : b; }
 template < typename type_t > type_t Min(type_t a, type_t b, type_t c) { return tiny3d::Min(tiny3d::Min(a, b), c); }
 template < typename type_t > type_t Max(type_t a, type_t b, type_t c) { return tiny3d::Max(tiny3d::Max(a, b), c); }
+template < typename type_t > void   Swap(type_t &a, type_t &b)        { type_t c = a; a = b; b = c; }
 
 template < typename type_t > type_t Abs(type_t x)                           { return tiny3d::Max(x, -x); }
 template < typename type_t > type_t Clamp(type_t min, type_t x, type_t max) { return tiny3d::Min(tiny3d::Max(x, min), max); }

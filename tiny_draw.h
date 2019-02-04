@@ -14,7 +14,7 @@ namespace tiny3d
 
 void DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
 void DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
-void DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
+void DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, tiny3d::WVertex a, tiny3d::WVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
 void DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
 void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::WVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
 void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);

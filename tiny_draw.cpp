@@ -45,7 +45,7 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, co
 	DrawPoint(dst, zbuf, ToW(a), tex, dst_rect);
 }
 
-void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, tiny3d::WVertex a, tiny3d::WVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	SInt min_x = 0;
 	SInt max_x = SInt(dst.GetWidth()) - 1;
