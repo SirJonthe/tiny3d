@@ -347,44 +347,70 @@ tiny3d::Byte ExtractStencilBit(const tiny3d::Byte *stencil_bits, tiny3d::UInt nu
 	return bit != 0 ? 0x0 : 0xff;
 }
 
-//void DrawChar(char ch, const mtlByte *stencil_bits, int font_width, int char_count_width, int char_width, int char_height, mtlByte *dst, int dst_bpp, mglByteOrder32 dst_order, int dst_w, int dst_h, int x, int y, mtlByte r, mtlByte g, mtlByte b, int scale)
-void tiny3d::DrawChar(tiny3d::Image &dst, tiny3d::Point p, char ch, tiny3d::Color color, UInt scale, const tiny3d::URect *dst_rect)
+tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
 {
-	if (scale <= 0) { return; }
-	if (ch < font_char_first || ch > font_char_last) {
-		ch = font_char_last + 1;
+	const SInt scaled_font_width = font_char_px_width * SInt(scale);
+	const Point out_p = { p.x + scaled_font_width * SInt(ch_num), p.y  };
+	if (scale == 0 || ch_num == 0) { return out_p; }
+	URect rect = { { 0, 0 }, { dst.GetWidth(), dst.GetHeight() } };
+	if (dst_rect != nullptr) {
+		rect.a.x = Max(rect.a.x, dst_rect->a.x);
+		rect.a.y = Max(rect.a.y, dst_rect->a.y);
+		rect.b.x = Min(rect.b.x, dst_rect->b.x);
+		rect.b.y = Min(rect.b.y, dst_rect->b.y);
 	}
-	const URect full_rect = { UPoint{ 0, 0 }, UPoint{ dst.GetWidth(), dst.GetHeight() } };
-	if (dst_rect == nullptr) {
-		dst_rect = &full_rect;
-	}
+	if (p.x >= SInt(rect.b.x) || p.y >= SInt(rect.b.y)) { return out_p; }
+	const SInt scaled_font_height = font_char_px_height * SInt(scale);
+	Point a = p;
+	Point b = Point{ a.x + scaled_font_width, a.y + scaled_font_height };
+	if (b.x < SInt(rect.a.x) || b.y < SInt(rect.a.y)) { return out_p; }
 
-	UInt ch_index = UInt(ch) - font_char_first;
-	UInt ch_x     = (ch_index % font_char_count_width) * font_char_px_width;
-	UInt ch_y     = (ch_index / font_char_count_width) * font_char_px_height;
-	SInt start_i  = p.x < SInt(dst_rect->a.x) ? SInt(dst_rect->a.x) - p.x : SInt(dst_rect->a.x);
-	UInt clip_x   = p.x < SInt(dst_rect->a.x) ? dst_rect->a.x : UInt(p.x);
-	SInt start_j  = p.y < SInt(dst_rect->a.y) ? SInt(dst_rect->a.y) - p.y : SInt(dst_rect->a.y);
-	UInt clip_y   = p.y < SInt(dst_rect->a.y) ? dst_rect->a.y : UInt(p.y);
-	SInt end_i    = (p.x + font_char_px_width)  >= SInt(dst_rect->b.x) ? SInt(dst_rect->b.x) - p.x : font_char_px_width;
-	SInt end_j    = (p.y + font_char_px_height) >= SInt(dst_rect->b.y) ? SInt(dst_rect->b.y) - p.y : font_char_px_height;
-	SInt size_i   = end_i - start_i;
-	SInt size_j   = end_j - start_j;
+	UPoint A = { Max(UInt(a.x), rect.a.x), Max(UInt(a.y), rect.a.y) };
+	UPoint B = { Min(UInt(b.x), rect.b.x), Min(UInt(b.y), rect.b.y) };
 
-	if (size_i <= 0) { return; }
+	for (UInt y = A.y; y < B.y; ++y) {
+		for (UInt x = A.x; x < B.x; ++x) {
+			UInt ci = UInt((SInt(x) - a.x) / scaled_font_width);
+			TINY3D_ASSERT(ci < ch_num);
+			char c = ch[ci];
+			if (c == ' ' || c == '\t') {
+				x += UInt(scaled_font_width - 1);
+				continue;
+			}
+			if (c < font_char_first || c > font_char_last) { c = font_char_last + 1; }
+			UInt fi = UInt(c) - font_char_first;
+			UInt fx = (fi % font_char_count_width) * font_char_px_width + (UInt((SInt(x) - a.x) % scaled_font_width) / scale);
+			UInt fy = (fi / font_char_count_width) * font_char_px_height + (UInt(SInt(y) - a.y) / scale);
 
-	for (UInt y = 0; y < UInt(size_j); ++y) {
-		UInt font_bit_row = ch_y + y;
-		for (UInt x = 0; x < UInt(size_i); ++x) {
-			UInt font_bit_col = ch_x + x;
-			UPoint q = { UInt(clip_x + x), UInt(clip_y + y) };
-			if (ExtractStencilBit(font_bits, font_width, font_bit_col, font_bit_row) != 0) {
+			if (ExtractStencilBit(font_bits, font_width, fx, fy) != 0) {
+				UPoint q = { x, y };
 				Color pixel = dst.GetColor(q);
 				color.blend = pixel.blend;
 				dst.SetColor(q, Dither2x2(color, q));
 			}
 		}
 	}
+
+	return out_p;
+}
+
+tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
+{
+	UInt start = 0;
+	UInt end = 0;
+	const SInt start_x = p.x;
+	const SInt scaled_font_height = SInt(scale) * font_char_px_height;
+	while (end < ch_num) {
+		if (ch[end] == '\n' || ch[end] == '\r') {
+			::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
+			p.x = start_x;
+			p.y += scaled_font_height;
+			start = end;
+		}
+		++end;
+	}
+	p = ::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
+	return p;
 }
 
 /*void tiny3d::Blit(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect)
