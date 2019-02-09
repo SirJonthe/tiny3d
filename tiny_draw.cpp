@@ -405,13 +405,11 @@ tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SIn
 				::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
 				p.x = x_margin;
 				p.y += scaled_font_height;
-				start = end;
+				start = end + 1;
 			}
 			++end;
 		}
-		if (ch[end - 1] != '\n' && ch[end - 1] != '\r') {
-			p = ::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
-		}
+		p = ::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
 	}
 	return p;
 }
