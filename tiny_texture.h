@@ -66,7 +66,7 @@ public:
 	tiny3d::Color::BlendMode GetBlendMode2( void ) const;
 	void                     SetBlendMode1(tiny3d::Color::BlendMode blend_mode);
 	void                     SetBlendMode2(tiny3d::Color::BlendMode blend_mode);
-	Vector2                  ProjectUV(tiny3d::Vector2 uv) const;
+	tiny3d::Vector2          ProjectUV(tiny3d::Vector2 uv) const;
 
 	tiny3d::Texture &operator=(const tiny3d::Texture &r);
 
