@@ -362,7 +362,7 @@ tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tin
 	if (p.x >= SInt(rect.b.x) || p.y >= SInt(rect.b.y)) { return out_p; }
 	const SInt scaled_font_height = font_char_px_height * SInt(scale);
 	Point a = p;
-	Point b = Point{ a.x + scaled_font_width, a.y + scaled_font_height };
+	Point b = Point{ a.x + scaled_font_width * SInt(ch_num), a.y + scaled_font_height };
 	if (b.x < SInt(rect.a.x) || b.y < SInt(rect.a.y)) { return out_p; }
 
 	UPoint A = { Max(UInt(a.x), rect.a.x), Max(UInt(a.y), rect.a.y) };
@@ -394,26 +394,29 @@ tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tin
 	return out_p;
 }
 
-tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
+tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SInt x_margin, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
 {
-	UInt start = 0;
-	UInt end = 0;
-	const SInt start_x = p.x;
-	const SInt scaled_font_height = SInt(scale) * font_char_px_height;
-	while (end < ch_num) {
-		if (ch[end] == '\n' || ch[end] == '\r') {
-			::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
-			p.x = start_x;
-			p.y += scaled_font_height;
-			start = end;
+	if (ch_num > 0) {
+		UInt start = 0;
+		UInt end = 0;
+		const SInt scaled_font_height = SInt(scale) * font_char_px_height;
+		while (end < ch_num) {
+			if (ch[end] == '\n' || ch[end] == '\r') {
+				::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
+				p.x = x_margin;
+				p.y += scaled_font_height;
+				start = end;
+			}
+			++end;
 		}
-		++end;
+		if (ch[end - 1] != '\n' && ch[end - 1] != '\r') {
+			p = ::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
+		}
 	}
-	p = ::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
 	return p;
 }
 
-/*void tiny3d::Blit(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect)
+/*void tiny3d::DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect)
 {
 	Rect srect = tiny3d::Clip(src_rect, { { 0, 0 }, { src.GetWidth(), src.GetHeight() } });
 	Rect drect = tiny3d::Clip(dst_rect, { { 0, 0 }, { dst.GetWidth(), dst.GetHeight() } });
