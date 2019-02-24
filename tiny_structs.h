@@ -72,6 +72,14 @@ struct WVertex
 	Real    w; // 1/z
 };
 
+struct XWVertex
+{
+	Point p;
+	XReal u, v; // 1/tcoord
+	XReal r, g, b; // 1/color
+	XReal w;
+};
+
 WVertex ToW(const Vertex &v);
 
 template < typename type_t >

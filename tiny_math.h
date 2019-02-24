@@ -153,9 +153,13 @@ private:
 	typedef SXInt real_t;
 	static constexpr real_t S_PREC      = real_t(Real::S_PREC * 2);
 	static constexpr real_t S_PREC_DIFF = real_t(S_PREC - Real::S_PREC);
-	static constexpr real_t S_INF_BIT   = real_t(Real::S_INF_BIT); // NOT CORRECT
-	static constexpr real_t S_NINF_BIT  = real_t(Real::S_NINF_BIT); // NOT CORRECT
-	static constexpr real_t S_NAN_BIT   = real_t(Real::S_NAN_BIT); // NOT CORRECT
+	static constexpr real_t S_INF_BIT   = (real_t(Real::S_INF_BIT) << S_PREC_DIFF) + std::numeric_limits<tiny3d::UHInt>::max();
+	static constexpr real_t S_NAN_BIT   = ~S_INF_BIT;
+	static constexpr real_t S_NINF_BIT  = S_NAN_BIT + 1;
+
+	// Inf = ffffff
+	// NaN = -ffffff
+	// NInf = NaN + 1
 
 private:
 	real_t x;
@@ -196,6 +200,7 @@ public:
 	static constexpr UInt Precision( void ) { return UInt(S_PREC); }
 
 	static XReal Inverse(Real r);
+	static Real  Inverse(XReal r);
 };
 
 XReal operator +(XReal l, XReal r);

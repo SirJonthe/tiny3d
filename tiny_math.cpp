@@ -428,7 +428,7 @@ tiny3d::XReal::XReal(tiny3d::Real r)
 		x = S_NAN_BIT;
 		break;
 	default:
-		x = (real_t(r.x) << (S_PREC - Real::S_PREC));
+		x = (real_t(r.x) << S_PREC_DIFF);
 		break;
 	}
 }
@@ -447,7 +447,7 @@ tiny3d::XReal::operator tiny3d::Real( void ) const
 		r.x = Real::S_NAN_BIT;
 		break;
 	default:
-		r.x = Real::real_t(r.x >> (S_PREC - Real::S_PREC));
+		r.x = Real::real_t(r.x >> S_PREC_DIFF);
 		break;
 	}
 	return r;
@@ -620,6 +620,18 @@ tiny3d::XReal tiny3d::XReal::Inverse(tiny3d::Real r)
 		o.x = r.x != 0 ? Clamp(S_NINF_BIT, SCALED_ONE / real_t(r.x), S_INF_BIT) : S_INF_BIT;
 	} else {
 		o.x = S_NAN_BIT;
+	}
+	return o;
+}
+
+tiny3d::Real tiny3d::XReal::Inverse(tiny3d::XReal r)
+{
+	constexpr real_t SCALED_ONE = real_t(1) << (S_PREC + Real::S_PREC);
+	Real o;
+	if (!r.IsNaN()) {
+		o.x = r.x != 0 ? Clamp(Real::S_NINF_BIT, Real::real_t(SCALED_ONE / r.x), Real::S_INF_BIT) : Real::S_INF_BIT;
+	} else {
+		o.x = Real::S_NAN_BIT;
 	}
 	return o;
 }
