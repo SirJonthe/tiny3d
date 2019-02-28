@@ -3,7 +3,15 @@
 
 using namespace tiny3d;
 
-void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+namespace internal_impl
+{
+	void DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, tiny3d::WVertex a, tiny3d::WVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::WVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect);
+}
+
+void internal_impl::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	const URect srect = URect{ { 0, 0 }, { UInt(dst.GetWidth()), UInt(dst.GetHeight()) } };
 	const URect rect = (dst_rect != nullptr) ? tiny3d::Clip(*dst_rect, srect) : srect;
@@ -42,10 +50,10 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, co
 
 void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	DrawPoint(dst, zbuf, ToW(a), tex, dst_rect);
+	internal_impl::DrawPoint(dst, zbuf, ToW(a), tex, dst_rect);
 }
-#include <iostream>
-void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, tiny3d::WVertex a, tiny3d::WVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+
+void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, tiny3d::WVertex a, tiny3d::WVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	SInt min_x = 0;
 	SInt max_x = SInt(dst.GetWidth()) - 1;
@@ -117,7 +125,7 @@ void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, tin
 
 void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	DrawLine(dst, zbuf, ToW(a), ToW(b), tex, dst_rect);
+	internal_impl::DrawLine(dst, zbuf, ToW(a), ToW(b), tex, dst_rect);
 }
 
 tiny3d::SXInt DetermineHalfspace(tiny3d::Point a, tiny3d::Point b, tiny3d::Point point)
@@ -157,13 +165,13 @@ void DrawSubdivTri(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const 
 	WVertex ab = MidVertex(a, b);
 	WVertex bc = MidVertex(b, c);
 	WVertex ca = MidVertex(c, a);
-	DrawTriangle(dst, zbuf, a,  ab, ca, tex, dst_rect);
-	DrawTriangle(dst, zbuf, ab, b,  bc, tex, dst_rect);
-	DrawTriangle(dst, zbuf, ca, bc, c,  tex, dst_rect);
-	DrawTriangle(dst, zbuf, ca, ab, bc, tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, a,  ab, ca, tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, ab, b,  bc, tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, ca, bc, c,  tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, ca, ab, bc, tex, dst_rect);
 }
 
-void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::WVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::WVertex &a, const tiny3d::WVertex &b, const tiny3d::WVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	// AABB Clipping
 	SInt min_y = tiny3d::Max(tiny3d::Min(a.p.y, b.p.y, c.p.y), SInt(0));
@@ -287,7 +295,7 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf,
 
 void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<tiny3d::Real> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	DrawTriangle(dst, zbuf, ToW(a), ToW(b), ToW(c), tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, ToW(a), ToW(b), ToW(c), tex, dst_rect);
 }
 
 #define font_char_px_width  TINY3D_CHAR_WIDTH
@@ -347,7 +355,7 @@ tiny3d::Byte ExtractStencilBit(const tiny3d::Byte *stencil_bits, tiny3d::UInt nu
 	return bit != 0 ? 0x0 : 0xff;
 }
 
-tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
+tiny3d::Point internal_impl::DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
 {
 	const SInt scaled_font_width = font_char_px_width * SInt(scale);
 	const Point out_p = { p.x + scaled_font_width * SInt(ch_num), p.y  };
@@ -402,14 +410,14 @@ tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SIn
 		const SInt scaled_font_height = SInt(scale) * font_char_px_height;
 		while (end < ch_num) {
 			if (ch[end] == '\n' || ch[end] == '\r') {
-				::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
+				internal_impl::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
 				p.x = x_margin;
 				p.y += scaled_font_height;
 				start = end + 1;
 			}
 			++end;
 		}
-		p = ::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
+		p = internal_impl::DrawChars(dst, p, ch + start, (end - start), color, scale, dst_rect);
 	}
 	return p;
 }

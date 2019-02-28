@@ -38,8 +38,10 @@ bool TestBit(int_t bits, tiny3d::UInt i) { return (bits & (1 << i)) != 0; }
 template < typename int_t >
 int_t ReadBit(int_t bits, tiny3d::UInt i) { return (bits >> i) & 1; }
 
-// if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
+class WReal;
 class XReal;
+
+// if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
 class Real
 {
 private:
@@ -145,6 +147,15 @@ SInt  Round(Real r);
 SInt  Ceil(Real r);
 SInt  Floor(Real r);
 template < typename type_t > type_t Lerp(const type_t &a, const type_t &b, Real x) { return a + (b - a) * x; }
+
+
+// represents the inverse of a real number, all digits used for precision
+class WReal
+{
+public:
+	explicit WReal(Real r);
+	explicit operator Real( void ) const;
+};
 
 // same range as Real, double precision
 class XReal

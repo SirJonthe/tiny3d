@@ -81,6 +81,7 @@ struct XWVertex
 };
 
 WVertex ToW(const Vertex &v);
+XWVertex ToXW(const Vertex &v);
 
 template < typename type_t >
 class Array
