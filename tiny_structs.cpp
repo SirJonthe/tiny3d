@@ -150,17 +150,3 @@ tiny3d::WVertex tiny3d::ToW(const tiny3d::Vertex &v)
 	iv.c.z = v.c.b * iv.w;
 	return iv;
 }
-
-tiny3d::XWVertex tiny3d::ToXW(const tiny3d::Vertex &v)
-{
-	XWVertex iv;
-	iv.p.x = SInt(v.v.x);
-	iv.p.y = SInt(v.v.y);
-	iv.w = XReal::Inverse(v.v.z);
-	iv.u = XReal(v.t.x) * iv.w;
-	iv.v = XReal(v.t.y) * iv.w;
-	iv.r = XReal(SInt(v.c.r)) * iv.w;
-	iv.g = XReal(SInt(v.c.g)) * iv.w;
-	iv.b = XReal(SInt(v.c.b)) * iv.w;
-	return iv;
-}

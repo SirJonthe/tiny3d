@@ -72,16 +72,16 @@ struct WVertex
 	Real    w; // 1/z
 };
 
-struct XWVertex
+WVertex ToW(const Vertex &v);
+
+/*struct WVertex
 {
 	Point p;
-	XReal u, v; // 1/tcoord
-	XReal r, g, b; // 1/color
-	XReal w;
+	WReal u, v;
+	WReal r, g, b;
+	WReal w;
 };
-
-WVertex ToW(const Vertex &v);
-XWVertex ToXW(const Vertex &v);
+WVertex ToW(const Vertex &v);*/
 
 template < typename type_t >
 class Array
