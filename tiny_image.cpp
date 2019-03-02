@@ -114,6 +114,11 @@ void tiny3d::Image::Fill(tiny3d::URect rect, tiny3d::Color color)
 	}
 }
 
+void tiny3d::Image::Fill(tiny3d::Color color)
+{
+	Fill(URect{ UPoint{ 0, 0 }, UPoint{ m_width, m_height } }, color);
+}
+
 void tiny3d::Image::ClearStencil(tiny3d::URect rect, tiny3d::Color::BlendMode stencil)
 {
 	URect dst = {
