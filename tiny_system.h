@@ -43,19 +43,8 @@ namespace System
 	{
 		void Blit(const Image &src, const URect *dst_rect = nullptr);
 		void Update(const URect *dst_rect = nullptr);
-		tiny3d::UInt  Width( void );
-		tiny3d::UInt  Height( void );
-	}
-
-	namespace Audio
-	{
-	}
-
-	namespace Input
-	{
-		// Touch
-		// Controller
-		// Keyboard
+		tiny3d::UInt Width( void );
+		tiny3d::UInt Height( void );
 	}
 };
 
