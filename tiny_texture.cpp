@@ -158,7 +158,7 @@ tiny3d::Color tiny3d::Texture::DecodeTexel(tiny3d::UHInt texel) const
 	color.r = Byte(r);
 	color.g = Byte(g);
 	color.b = Byte(b);
-	color.blend = (texel & 0x8000) ? m_blend_modes[0] : m_blend_modes[1];
+	color.blend = (texel & 0x8000) ? m_blend_modes[1] : m_blend_modes[0];
 	return color;
 }
 
@@ -236,10 +236,10 @@ bool tiny3d::Texture::ToImage(tiny3d::Image &image) const
 	return true;
 }
 
-struct IColor { UInt r, g, b, blend; };
+struct IColor { UInt r, g, b; float blend; };
 IColor operator/(IColor l, UInt r) { return IColor{ l.r / r, l.g / r, l.b / r, l.blend / r }; }
-IColor operator+(IColor l, tiny3d::Color r) { return IColor{ l.r + r.r, l.g + r.g, l.b + r.b, l.blend + r.blend }; }
-tiny3d::Color ToColor(IColor c) { return Color{ Byte(c.r), Byte(c.g), Byte(c.b), Byte((c.blend / float(CCC_COUNT)) + 0.5f) }; }
+IColor operator+(IColor l, tiny3d::Color r) { return IColor{ l.r + r.r, l.g + r.g, l.b + r.b, l.blend + float(r.blend & 1) }; }
+tiny3d::Color ToColor(IColor c) { return Color{ Byte(c.r), Byte(c.g), Byte(c.b), Byte(c.blend + 0.5f) }; }
 
 tiny3d::UInt AverageLuminance(const tiny3d::Image &img, tiny3d::UPoint p)
 {

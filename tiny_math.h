@@ -38,13 +38,13 @@ bool TestBit(int_t bits, tiny3d::UInt i) { return (bits & (1 << i)) != 0; }
 template < typename int_t >
 int_t ReadBit(int_t bits, tiny3d::UInt i) { return (bits >> i) & 1; }
 
-class WReal;
+class XReal;
 
 // if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
 class Real
 {
 private:
-	friend class WReal;
+	friend class XReal;
 	typedef SInt real_t;
 	static constexpr real_t S_INF_BIT  = std::numeric_limits<real_t>::max();
 	static constexpr real_t S_NINF_BIT = std::numeric_limits<real_t>::min() + 1;
@@ -151,40 +151,82 @@ SInt  Ceil(Real r);
 SInt  Floor(Real r);
 template < typename type_t > type_t Lerp(const type_t &a, const type_t &b, Real x) { return a + (b - a) * x; }
 
-// represents the inverse of a real number, all digits used for precision
-class WReal
+class XReal
 {
 private:
-	typedef UInt real_t;
-	static constexpr real_t U_NAN_BIT = std::numeric_limits<real_t>::max();
-	static constexpr real_t U_MAX     = U_NAN_BIT - 1;
-	static constexpr real_t U_PREC    = Real::S_PREC * 2 - 1; // one bit is reserved for range
+	typedef SXInt real_t;
+	static constexpr real_t S_INF_BIT  = std::numeric_limits<real_t>::max();
+	static constexpr real_t S_NINF_BIT = std::numeric_limits<real_t>::min() + 1;
+	static constexpr real_t S_NAN_BIT  = std::numeric_limits<real_t>::min();
+	static constexpr real_t S_PREC     = (CHAR_BIT * sizeof(real_t)) / 2;
+	static constexpr real_t S_DEC_STEP = 1;
+	static constexpr real_t S_INT_STEP = real_t(1) << S_PREC;
 
 private:
 	real_t x;
 
 public:
-	static WReal NaN( void );
+	XReal( void );
+	XReal(const XReal &r);
+	explicit XReal(SInt i);
+	explicit XReal(Real r);
+	explicit operator SInt( void ) const;
+	explicit operator Real( void ) const;
+
+	static XReal Inf( void );
+	static XReal NInf( void );
+	static XReal NaN( void );
+	static XReal SmallestInt( void );
+	static XReal SmallestFrac( void );
+	static XReal Max( void );
+	static XReal Min( void );
 	bool IsNaN( void )  const;
+	bool IsInf( void )  const;
+	bool IsNInf( void ) const;
 
-	static WReal OneOverZ(Real z);
-	static Real  OneOverW(WReal w);
+	XReal operator-( void ) const;
+	XReal &operator+=(XReal r);
+	XReal &operator-=(XReal r);
+	XReal &operator*=(XReal r);
+	XReal &operator+=(SInt r);
+	XReal &operator-=(SInt r);
+	XReal &operator*=(SInt r);
+	XReal &operator/=(SInt r);
 
-	static constexpr UInt Precision( void ) { return UInt(U_PREC); }
+	bool operator ==(XReal r) const;
+	bool operator !=(XReal r) const;
+	bool operator  <(XReal r) const;
+	bool operator  >(XReal r) const;
+	bool operator <=(XReal r) const;
+	bool operator >=(XReal r) const;
 
-	WReal &operator+=(WReal r);
-	WReal &operator-=(WReal r);
+	UXInt ToBits( void )  const;
 
-	bool operator ==(WReal r) const;
-	bool operator !=(WReal r) const;
-	bool operator  <(WReal r) const;
-	bool operator  >(WReal r) const;
-	bool operator <=(WReal r) const;
-	bool operator >=(WReal r) const;
+	static constexpr UInt Precision( void ) { return UInt(S_PREC); }
 };
 
-WReal operator +(WReal l, WReal r);
-WReal operator -(WReal l, WReal r);
+XReal operator +(XReal l, XReal r);
+XReal operator -(XReal l, XReal r);
+XReal operator *(XReal l, XReal r);
+XReal operator +(XReal l, SInt  r);
+XReal operator -(XReal l, SInt  r);
+XReal operator *(XReal l, SInt  r);
+XReal operator /(XReal l, SInt  r);
+XReal operator +(SInt  l, XReal r);
+XReal operator -(SInt  l, XReal r);
+XReal operator *(SInt  l, XReal r);
+bool  operator==(SInt  l, XReal r);
+bool  operator==(XReal l, SInt  r);
+bool  operator!=(SInt  l, XReal r);
+bool  operator!=(XReal l, SInt  r);
+bool  operator <(SInt  l, XReal r);
+bool  operator <(XReal l, SInt  r);
+bool  operator >(SInt  l, XReal r);
+bool  operator >(XReal l, SInt  r);
+bool  operator<=(SInt  l, XReal r);
+bool  operator<=(XReal l, SInt  r);
+bool  operator>=(SInt  l, XReal r);
+bool  operator>=(XReal l, SInt  r);
 
 class Vector3
 {
