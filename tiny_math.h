@@ -91,7 +91,7 @@ public:
 	bool operator <=(Real r) const;
 	bool operator >=(Real r) const;
 
-	float Debug_ToFloat( void ) const;
+	float ToFloat( void ) const;
 	UInt  ToBits( void )  const;
 
 	static constexpr UInt Precision( void ) { return UInt(S_PREC); }

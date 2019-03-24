@@ -306,8 +306,15 @@ bool tiny3d::Real::operator>=(tiny3d::Real r) const
 	return IsNaN() ? false : x >= r.x;
 }
 
-float tiny3d::Real::Debug_ToFloat( void ) const
+float tiny3d::Real::ToFloat( void ) const
 {
+	if (IsInf()) {
+		return std::numeric_limits<float>::infinity();
+	} else if (IsNInf()) {
+		return -std::numeric_limits<float>::infinity();
+	} else if (IsNaN()) {
+		return std::numeric_limits<float>::quiet_NaN();
+	}
 	return float(x) / float(1 << S_PREC);
 }
 

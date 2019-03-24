@@ -12,7 +12,6 @@ namespace internal_impl
 		float   r,g,b; // 1/color
 		float   w;     // 1/z
 	};
-	internal_impl::IVertex ToI(const tiny3d::Vertex &v);
 
 	void DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
@@ -25,14 +24,14 @@ float BLerp(float a, float b, float c, float l0, float l1, float l2)
 	return a * l0 + b * l1 + c * l2;
 }
 
-internal_impl::IVertex internal_impl::ToI(const tiny3d::Vertex &v)
+internal_impl::IVertex ToI(const tiny3d::Vertex &v)
 {
 	internal_impl::IVertex iv;
 	iv.p.x = SInt(v.v.x);
 	iv.p.y = SInt(v.v.y);
-	iv.w   = 1.0f / v.v.z.Debug_ToFloat();
-	iv.u = v.t.x.Debug_ToFloat() * iv.w;
-	iv.v = v.t.y.Debug_ToFloat() * iv.w;
+	iv.w   = 1.0f / v.v.z.ToFloat();
+	iv.u = v.t.x.ToFloat() * iv.w;
+	iv.v = v.t.y.ToFloat() * iv.w;
 	iv.r = float(v.c.r) * iv.w;
 	iv.g = float(v.c.g) * iv.w;
 	iv.b = float(v.c.b) * iv.w;
@@ -84,7 +83,7 @@ void internal_impl::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, co
 
 void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawPoint(dst, zbuf, internal_impl::ToI(a), tex, dst_rect);
+	internal_impl::DrawPoint(dst, zbuf, ToI(a), tex, dst_rect);
 }
 
 void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
@@ -165,7 +164,7 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 
 void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawLine(dst, zbuf, internal_impl::ToI(a), internal_impl::ToI(b), tex, dst_rect);
+	internal_impl::DrawLine(dst, zbuf, ToI(a), ToI(b), tex, dst_rect);
 }
 
 tiny3d::SXInt DetermineHalfspace(tiny3d::Point a, tiny3d::Point b, tiny3d::Point point)
@@ -335,7 +334,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 
 void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawTriangle(dst, zbuf, internal_impl::ToI(a), internal_impl::ToI(b), internal_impl::ToI(c), tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, ToI(a), ToI(b), ToI(c), tex, dst_rect);
 }
 
 #define font_char_px_width  TINY3D_CHAR_WIDTH
