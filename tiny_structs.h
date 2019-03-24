@@ -35,10 +35,11 @@ struct Color
 {
 	enum BlendMode
 	{
-		Transparent,   // don't render the pixel
-		Emissive,      // don't add lighting to the pixel
-		DitheredAlpha, // checkerboard alpha
-		Solid,         // render the pixel solid with lighting
+		Transparent,     // don't render the pixel
+		Solid,           // render the pixel solid with lighting
+		AddAlpha,        // additive alpha
+		Emissive,        // don't add lighting to the pixel
+		EmissiveAddAlpha // emissive additive alpha
 	};
 
 	Byte r, g, b, blend;
@@ -63,25 +64,6 @@ struct Vertex
 	Vector2 t;
 	Color   c;
 };
-
-struct WVertex
-{
-	Point   p;
-	Vector2 t; // 1/tcoord
-	Vector3 c; // 1/color
-	Real    w; // 1/z
-};
-
-WVertex ToW(const Vertex &v);
-
-/*struct WVertex
-{
-	Point p;
-	WReal u, v;
-	WReal r, g, b;
-	WReal w;
-};
-WVertex ToW(const Vertex &v);*/
 
 template < typename type_t >
 class Array

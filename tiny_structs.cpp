@@ -137,16 +137,3 @@ tiny3d::Byte tiny3d::Illum(tiny3d::Color c)
 	UInt gray = (r + g + b) / 10;
 	return Byte(gray);
 }
-
-tiny3d::WVertex tiny3d::ToW(const tiny3d::Vertex &v)
-{
-	WVertex iv;
-	iv.p.x = SInt(v.v.x);
-	iv.p.y = SInt(v.v.y);
-	iv.w   = 1 / v.v.z;
-	iv.t   = v.t   * iv.w;
-	iv.c.x = v.c.r * iv.w;
-	iv.c.y = v.c.g * iv.w;
-	iv.c.z = v.c.b * iv.w;
-	return iv;
-}
