@@ -284,8 +284,6 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 					const float L1 = l1 * sz;
 					const float L2 = l2 * sz;
 
-					//const Vector2 uv   = (a.t * l0 + b.t * l1 + c.t * l2) * sz;
-					//const Vector3 tcol = (a.c * l0 + b.c * l1 + c.c * l2) * sz;
 					const Color col = {
 						Byte(a.r * L0 + b.r * L1 + c.r * L2),
 						Byte(a.g * L0 + b.g * L1 + c.g * L2),

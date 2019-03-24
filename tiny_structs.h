@@ -36,9 +36,9 @@ struct Color
 	enum BlendMode
 	{
 		Transparent,     // don't render the pixel
-		Solid,           // render the pixel solid with lighting
+		Emissive,        // render the pixel solid with lighting
 		AddAlpha,        // additive alpha
-		Emissive,        // don't add lighting to the pixel
+		Solid,           // don't add lighting to the pixel
 		EmissiveAddAlpha // emissive additive alpha
 	};
 
