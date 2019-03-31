@@ -7,13 +7,12 @@ namespace internal_impl
 {
 	struct IVertex
 	{
-		Point   p;
-		float   u,v;   // 1/tcoord
-		float   r,g,b; // 1/color
-		float   w;     // 1/z
+		Point p;
+		float u, v;    // 1/tcoord
+		float r, g, b; // 1/color
+		float w;       // 1/z
 	};
 
-	void DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect);
@@ -38,26 +37,22 @@ internal_impl::IVertex ToI(const tiny3d::Vertex &v)
 	return iv;
 }
 
-void internal_impl::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	const URect srect = URect{ { 0, 0 }, { UInt(dst.GetWidth()), UInt(dst.GetHeight()) } };
 	const URect rect = (dst_rect != nullptr) ? tiny3d::Clip(*dst_rect, srect) : srect;
-	if (a.p.x >= SInt(rect.a.x) && a.p.y >= SInt(rect.a.y) && a.p.x < SInt(rect.b.x) && a.p.y < SInt(rect.b.y)) {
+	if (SInt(a.v.x) >= SInt(rect.a.x) && SInt(a.v.y) >= SInt(rect.a.y) && SInt(a.v.x) < SInt(rect.b.x) && SInt(a.v.y) < SInt(rect.b.y)) {
 
-		const UPoint q     = { UInt(a.p.x), UInt(a.p.y) };
+		const UPoint q     = { UInt(SInt(a.v.x)), UInt(SInt(a.v.y)) };
 		const Color  pixel = dst.GetColor(q);
 		const UInt   zi    = q.x + q.y * dst.GetWidth();
-		const float  sz    = 1 / a.w;
+		const float  sz    = a.v.z.ToFloat();
 		const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
 
 		if (sz <= dz && pixel.blend != Color::Transparent) {
-			const Color col = {
-				Byte(SInt(a.r * sz)),
-				Byte(SInt(a.g * sz)),
-				Byte(SInt(a.b * sz)),
-				Color::Solid
-			};
-			const Color texel = (tex != nullptr) ? tex->GetColor(Vector2{ Real(a.u * sz), Real(a.v * sz) }) : Color{ 255, 255, 255, Color::Solid };
+
+			const Color col = a.c;
+			const Color texel = (tex != nullptr) ? tex->GetColor(a.t) : Color{ 255, 255, 255, Color::Solid };
 
 			switch (texel.blend)
 			{
@@ -81,11 +76,6 @@ void internal_impl::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, co
 	}
 }
 
-void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
-{
-	internal_impl::DrawPoint(dst, zbuf, ToI(a), tex, dst_rect);
-}
-
 void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	SInt min_x = 0;
@@ -102,15 +92,25 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 	const SInt dx = b.p.x - a.p.x;
 	const SInt dy = b.p.y - a.p.y;
 	const SInt steps = Abs(dx) > Abs(dy) ? Abs(dx) : Abs(dy);
-	const float x_inc = float(dx) / steps, y_inc = float(dy) / steps, w_inc = b.w - a.w;
-	const float u_inc = (b.u - a.u) / steps, v_inc = (b.v - a.v) / steps;
-	const float r_inc = (b.r - a.r) / steps, g_inc = (b.g - a.g) / steps, b_inc = (b.b - a.b) / steps;
+	const float x_inc = float(dx) / steps;
+	const float y_inc = float(dy) / steps;
+	const float w_inc = (b.w - a.w) / steps;
+	const float u_inc = (b.u - a.u) / steps;
+	const float v_inc = (b.v - a.v) / steps;
+	const float r_inc = (b.r - a.r) / steps;
+	const float g_inc = (b.g - a.g) / steps;
+	const float b_inc = (b.b - a.b) / steps;
 
-	float X = a.p.x, Y = a.p.y, W = a.w;
-	float U = a.u, V = a.v;
-	float R = a.r, G = a.g, B = a.b;
+	float X = a.p.x;
+	float Y = a.p.y;
+	float W = a.w;
+	float U = a.u;
+	float V = a.v;
+	float R = a.r;
+	float G = a.g;
+	float B = a.b;
 	for (SInt i = 0; i <= steps; i++) {
-		Point p = { SInt(X),SInt(Y) };
+		Point p = { SInt(X), SInt(Y) };
 		if (p.x >= min_x && p.x <= max_x && p.y >= min_y && p.y <= max_y) {
 
 			const UPoint q     = { UInt(p.x), UInt(p.y) };
@@ -231,10 +231,10 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 	SXInt         w1_y = DetermineHalfspace(c.p, a.p, p);
 	SXInt         w2_y = DetermineHalfspace(a.p, b.p, p);
 
-	if (ShouldDivide(w0_y + w1_y + w2_y)) {
-		DrawSubdivTri(dst, zbuf, a, b, c, tex, dst_rect);
-		return;
-	}
+//	if (ShouldDivide(w0_y + w1_y + w2_y)) {
+//		DrawSubdivTri(dst, zbuf, a, b, c, tex, dst_rect);
+//		return;
+//	}
 
 	// Interpolation/triangle setup
 	const SInt w2_x_inc        = a.p.y - b.p.y;
@@ -244,9 +244,6 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 	const SInt w1_x_inc        = c.p.y - a.p.y;
 	const SInt w1_y_inc        = a.p.x - c.p.x;
 	const float sum_inv_area_x2 = 1.0f / SInt(w0_y + w1_y + w2_y);
-	w0_y += IsTopLeft(b.p, c.p) ? 0 : -1; // add offsets to coordinates to enforce fill convention
-	w1_y += IsTopLeft(c.p, a.p) ? 0 : -1;
-	w2_y += IsTopLeft(a.p, b.p) ? 0 : -1;
 	float l0_y           = SInt(w0_y) * sum_inv_area_x2;
 	float l1_y           = SInt(w1_y) * sum_inv_area_x2;
 	float l2_y           = SInt(w2_y) * sum_inv_area_x2;
@@ -256,6 +253,10 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 	const float l0_y_inc = w0_y_inc * sum_inv_area_x2;
 	const float l1_y_inc = w1_y_inc * sum_inv_area_x2;
 	const float l2_y_inc = w2_y_inc * sum_inv_area_x2;
+
+	w0_y += IsTopLeft(b.p, c.p) ? 0 : -1; // add offsets to coordinates to enforce fill convention
+	w1_y += IsTopLeft(c.p, a.p) ? 0 : -1;
+	w2_y += IsTopLeft(a.p, b.p) ? 0 : -1;
 
 	for (p.y = min_y; p.y <= max_y; ++p.y) {
 
