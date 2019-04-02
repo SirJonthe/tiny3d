@@ -92,6 +92,7 @@ public:
 	}
 	void Copy(const Array<type_t> &a)
 	{
+		if (this == &a) { return; }
 		Create(a.m_size);
 		for (UInt i = 0; i < m_size; ++i) {
 			m_arr[i] = a.m_arr[i];
@@ -99,9 +100,7 @@ public:
 	}
 	Array<type_t> &operator=(const Array<type_t> &a)
 	{
-		if (this != &a) {
-			Copy(a);
-		}
+		Copy(a);
 		return *this;
 	}
 	type_t &operator[](UInt i)

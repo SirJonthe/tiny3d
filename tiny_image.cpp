@@ -92,6 +92,7 @@ void tiny3d::Image::Destroy( void )
 
 void tiny3d::Image::Copy(const tiny3d::Image &img)
 {
+	if (this == &img) { return; }
 	Create(img.m_width, img.m_height);
 	for (UInt i = 0; i < m_width*m_height; ++i) {
 		m_pixels[i] = img.m_pixels[i];
@@ -161,8 +162,6 @@ void tiny3d::Image::SetColor(tiny3d::UPoint p, tiny3d::Color color)
 
 tiny3d::Image &tiny3d::Image::operator=(const tiny3d::Image &i)
 {
-	if (this != &i) {
-		Copy(i);
-	}
+	Copy(i);
 	return *this;
 }

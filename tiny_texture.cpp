@@ -215,6 +215,7 @@ void tiny3d::Texture::Destroy( void )
 
 void tiny3d::Texture::Copy(const tiny3d::Texture &t)
 {
+	if (this == &t) { return; }
 	Create(t.m_dimension);
 	m_blend_modes[0] = t.m_blend_modes[0];
 	m_blend_modes[1] = t.m_blend_modes[1];
@@ -376,8 +377,6 @@ tiny3d::Vector2 tiny3d::Texture::ProjectUV(tiny3d::Vector2 uv) const
 
 tiny3d::Texture &tiny3d::Texture::operator=(const tiny3d::Texture &t)
 {
-	if (this != &t) {
-		Copy(t);
-	}
+	Copy(t);
 	return *this;
 }
