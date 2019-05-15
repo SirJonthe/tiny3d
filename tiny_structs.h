@@ -81,7 +81,7 @@ public:
 	{
 		if (num == m_size) { return; }
 		delete [] m_arr;
-		m_arr = new type_t[num];
+		m_arr = (num > 0) ? new type_t[num] : nullptr;
 		m_size = num;
 	}
 	void Destroy( void )

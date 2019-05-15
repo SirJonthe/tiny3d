@@ -23,18 +23,23 @@ float BLerp(float a, float b, float c, float l0, float l1, float l2)
 	return a * l0 + b * l1 + c * l2;
 }
 
-internal_impl::IVertex ToI(const tiny3d::Vertex &v)
+internal_impl::IVertex ToI(const tiny3d::Vertex &v, const tiny3d::Texture *tex)
 {
 	internal_impl::IVertex iv;
 	iv.p.x = SInt(v.v.x);
 	iv.p.y = SInt(v.v.y);
 	iv.w   = 1.0f / v.v.z.ToFloat();
-	iv.u = v.t.x.ToFloat() * iv.w;
-	iv.v = v.t.y.ToFloat() * iv.w;
+	iv.u = v.t.x.ToFloat() * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
+	iv.v = v.t.y.ToFloat() * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
 	iv.r = float(v.c.r) * iv.w;
 	iv.g = float(v.c.g) * iv.w;
 	iv.b = float(v.c.b) * iv.w;
 	return iv;
+}
+
+internal_impl::IVertex ToI(const tiny3d::Vertex &v)
+{
+	return ToI(v, nullptr);
 }
 
 void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
@@ -56,18 +61,18 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tin
 
 			switch (texel.blend)
 			{
-			case tiny3d::Color::Solid:
+			case Color::Solid:
 				dst.SetColor(q, Dither2x2(texel * col, q));
 				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 				break;
-			case tiny3d::Color::AddAlpha:
+			case Color::AddAlpha:
 				dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * col, q));
 				break;
-			case tiny3d::Color::Emissive:
+			case Color::Emissive:
 				dst.SetColor(q, texel);
 				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 				break;
-			case tiny3d::Color::EmissiveAddAlpha:
+			case Color::EmissiveAddAlpha:
 				dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
 				break;
 			default: break;
@@ -119,7 +124,7 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 			const float  sz    = 1 / W;
 			const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
 
-			if (sz <= dz && pixel.blend != tiny3d::Color::Transparent) { // use transparency bit as a 1-bit stencil
+			if (sz <= dz && pixel.blend != Color::Transparent) { // use transparency bit as a 1-bit stencil
 
 				const Color col = {
 					Byte(R * sz),
@@ -128,22 +133,22 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 					Color::Solid
 				};
 
-				const Color texel = (tex != nullptr) ? tex->GetColor(Vector2{ Real(U * sz), Real(V * sz) }) : Color{ 255, 255, 255, Color::Solid };
+				const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(U * sz), UInt(V * sz) }) : Color{ 255, 255, 255, Color::Solid };
 
 				switch (texel.blend)
 				{
-				case tiny3d::Color::Solid:
+				case Color::Solid:
 					dst.SetColor(q, Dither2x2(texel * col, q));
 					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 					break;
-				case tiny3d::Color::AddAlpha:
+				case Color::AddAlpha:
 					dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * col, q));
 					break;
-				case tiny3d::Color::Emissive:
+				case Color::Emissive:
 					dst.SetColor(q, texel);
 					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 					break;
-				case tiny3d::Color::EmissiveAddAlpha:
+				case Color::EmissiveAddAlpha:
 					dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
 					break;
 				default: break;
@@ -164,7 +169,7 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 
 void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawLine(dst, zbuf, ToI(a), ToI(b), tex, dst_rect);
+	internal_impl::DrawLine(dst, zbuf, ToI(a, tex), ToI(b, tex), tex, dst_rect);
 }
 
 tiny3d::SXInt DetermineHalfspace(tiny3d::Point a, tiny3d::Point b, tiny3d::Point point)
@@ -278,7 +283,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 				const float  sz    = 1.0f / (a.w * l0 + b.w * l1 + c.w * l2);
 				const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
 
-				if (sz <= dz && pixel.blend != tiny3d::Color::Transparent) { // use transparency bit as a 1-bit stencil
+				if (sz <= dz && pixel.blend != Color::Transparent) { // use transparency bit as a 1-bit stencil
 
 					const float L0 = l0 * sz;
 					const float L1 = l1 * sz;
@@ -291,22 +296,22 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 						Color::Solid
 					};
 
-					const Color texel = (tex != nullptr) ? tex->GetColor(Vector2{ Real(a.u * L0 + b.u * L1 + c.u * L2), Real(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
+					const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
 
 					switch (texel.blend)
 					{
-					case tiny3d::Color::Solid:
+					case Color::Solid:
 						dst.SetColor(q, Dither2x2(texel * col, q));
 						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 						break;
-					case tiny3d::Color::AddAlpha:
+					case Color::AddAlpha:
 						dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * col, q));
 						break;
-					case tiny3d::Color::Emissive:
+					case Color::Emissive:
 						dst.SetColor(q, texel);
 						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
 						break;
-					case tiny3d::Color::EmissiveAddAlpha:
+					case Color::EmissiveAddAlpha:
 						dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
 						break;
 					default: break;
@@ -335,7 +340,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 
 void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawTriangle(dst, zbuf, ToI(a), ToI(b), ToI(c), tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zbuf, ToI(a, tex), ToI(b, tex), ToI(c, tex), tex, dst_rect);
 }
 
 #define font_char_px_width  TINY3D_CHAR_WIDTH
