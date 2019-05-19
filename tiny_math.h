@@ -38,7 +38,7 @@ bool TestBit(int_t bits, tiny3d::UInt i) { return (bits & (1 << i)) != 0; }
 template < typename int_t >
 int_t ReadBit(int_t bits, tiny3d::UInt i) { return (bits >> i) & 1; }
 
-class XReal;
+/*class XReal;
 
 // if 1 unit = 1 meter, where standard 16 gives us a range of -16 - 16 kms (32 km) with a precision of 1/65 mm
 class Real
@@ -126,9 +126,9 @@ bool operator >(Real l, SInt r);
 bool operator<=(SInt l, Real r);
 bool operator<=(Real l, SInt r);
 bool operator>=(SInt l, Real r);
-bool operator>=(Real l, SInt r);
+bool operator>=(Real l, SInt r);*/
 
-template < typename type_t = Real >
+/*template < typename type_t = Real >
 Real Wrap(Real min, Real x, Real max)
 {
 	SXInt smin    = SXInt(*reinterpret_cast<SInt*>(&min));
@@ -137,7 +137,7 @@ Real Wrap(Real min, Real x, Real max)
 	SXInt span    = smax - smin;
 	SInt  wrapped = SInt(smin + (y + (tiny3d::Abs(y) * span) - smin) % span);
 	return *reinterpret_cast<Real*>(&wrapped);
-}
+}*/
 
 Real  Pi( void );
 Real  Tau( void );
@@ -151,7 +151,7 @@ SInt  Ceil(Real r);
 SInt  Floor(Real r);
 template < typename type_t > type_t Lerp(const type_t &a, const type_t &b, Real x) { return a + (b - a) * x; }
 
-class XReal
+/*class XReal
 {
 private:
 	typedef SXInt real_t;
@@ -226,7 +226,7 @@ bool  operator >(XReal l, SInt  r);
 bool  operator<=(SInt  l, XReal r);
 bool  operator<=(XReal l, SInt  r);
 bool  operator>=(SInt  l, XReal r);
-bool  operator>=(XReal l, SInt  r);
+bool  operator>=(XReal l, SInt  r);*/
 
 class Vector3
 {

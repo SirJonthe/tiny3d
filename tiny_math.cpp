@@ -112,7 +112,7 @@ tiny3d::UHInt tiny3d::Interleave8Bits(tiny3d::Byte a, tiny3d::Byte b)
 	return UHInt(x | (y << 1));
 }
 
-tiny3d::Real::Real( void ) : x(0)
+/*tiny3d::Real::Real( void ) : x(0)
 {}
 
 tiny3d::Real::Real(const tiny3d::Real &r) : x(r.x)
@@ -665,7 +665,57 @@ bool          tiny3d::operator >(tiny3d::XReal l, tiny3d::SInt  r) { return l > 
 bool          tiny3d::operator<=(tiny3d::SInt  l, tiny3d::XReal r) { return XReal(l) <= r; }
 bool          tiny3d::operator<=(tiny3d::XReal l, tiny3d::SInt  r) { return l <= XReal(r); }
 bool          tiny3d::operator>=(tiny3d::SInt  l, tiny3d::XReal r) { return XReal(l) >= r; }
-bool          tiny3d::operator>=(tiny3d::XReal l, tiny3d::SInt  r) { return l >= XReal(r); }
+bool          tiny3d::operator>=(tiny3d::XReal l, tiny3d::SInt  r) { return l >= XReal(r); }*/
+
+tiny3d::Real tiny3d::Pi( void )
+{
+	return tiny3d::Real(M_PI);
+}
+
+tiny3d::Real tiny3d::Tau( void )
+{
+	return 2.0f * tiny3d::Pi();
+}
+
+tiny3d::Real tiny3d::Sin(tiny3d::Real rad)
+{
+	return sinf(rad);
+}
+
+tiny3d::Real tiny3d::Cos(tiny3d::Real rad)
+{
+	return cosf(rad);
+}
+
+tiny3d::Real tiny3d::Sqrt(tiny3d::Real x)
+{
+	return sqrtf(x);
+}
+
+tiny3d::Real tiny3d::Frac(tiny3d::Real r)
+{
+	return r - tiny3d::SInt(r);
+}
+
+tiny3d::SInt tiny3d::Trunc(tiny3d::Real r)
+{
+	return tiny3d::SInt(truncf(r));
+}
+
+tiny3d::SInt tiny3d::Round(tiny3d::Real r)
+{
+	return tiny3d::SInt(roundf(r));
+}
+
+tiny3d::SInt tiny3d::Ceil(tiny3d::Real r)
+{
+	return tiny3d::SInt(ceilf(r));
+}
+
+tiny3d::SInt tiny3d::Floor(tiny3d::Real r)
+{
+	return tiny3d::SInt(floorf(r));
+}
 
 tiny3d::Vector3::Vector3( void ) :
 	x(), y(), z()

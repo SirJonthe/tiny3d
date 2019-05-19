@@ -28,9 +28,12 @@ internal_impl::IVertex ToI(const tiny3d::Vertex &v, const tiny3d::Texture *tex)
 	internal_impl::IVertex iv;
 	iv.p.x = SInt(v.v.x);
 	iv.p.y = SInt(v.v.y);
-	iv.w   = 1.0f / v.v.z.ToFloat();
-	iv.u = v.t.x.ToFloat() * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
-	iv.v = v.t.y.ToFloat() * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
+//	iv.w   = 1.0f / v.v.z.ToFloat();
+	iv.w   = 1.0f / v.v.z;
+//	iv.u = v.t.x.ToFloat() * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
+//	iv.v = v.t.y.ToFloat() * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
+	iv.u = v.t.x * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
+	iv.v = v.t.y * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
 	iv.r = float(v.c.r) * iv.w;
 	iv.g = float(v.c.g) * iv.w;
 	iv.b = float(v.c.b) * iv.w;
@@ -51,7 +54,8 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tin
 		const UPoint q     = { UInt(SInt(a.v.x)), UInt(SInt(a.v.y)) };
 		const Color  pixel = dst.GetColor(q);
 		const UInt   zi    = q.x + q.y * dst.GetWidth();
-		const float  sz    = a.v.z.ToFloat();
+//		const float  sz    = a.v.z.ToFloat();
+		const float  sz    = a.v.z;
 		const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
 
 		if (sz <= dz && pixel.blend != Color::Transparent) {
@@ -183,10 +187,10 @@ bool IsTopLeft(tiny3d::Point a, tiny3d::Point b)
 	return (a.x < b.x && b.y == a.y) || (a.y > b.y);
 }
 
-bool ShouldDivide(SXInt req_prec)
+/*bool ShouldDivide(SXInt req_prec)
 {
 	return req_prec > (SXInt(1) << Real::Precision());
-}
+}*/
 
 internal_impl::IVertex MidVertex(const internal_impl::IVertex &a, const internal_impl::IVertex &b)
 {

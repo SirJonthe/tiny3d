@@ -21,7 +21,8 @@ namespace tiny3d
 {
 
 class Image;
-class Real;
+//class Real;
+typedef float Real;
 struct URect;
 
 typedef uint64_t UXInt;
