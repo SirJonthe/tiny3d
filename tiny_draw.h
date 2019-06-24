@@ -8,6 +8,8 @@
 
 #define TINY3D_CHAR_WIDTH  6
 #define TINY3D_CHAR_HEIGHT 6
+#define TINY3D_CHAR_FIRST  '!'
+#define TINY3D_CHAR_LAST   '~'
 
 namespace tiny3d
 {

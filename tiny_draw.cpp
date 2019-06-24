@@ -31,9 +31,9 @@ internal_impl::IVertex ToI(const tiny3d::Vertex &v, const tiny3d::Texture *tex)
 //	iv.w   = 1.0f / v.v.z.ToFloat();
 	iv.w   = 1.0f / v.v.z;
 //	iv.u = v.t.x.ToFloat() * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
-//	iv.v = v.t.y.ToFloat() * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
+//	iv.v = (1.0f - v.t.y.ToFloat()) * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
 	iv.u = v.t.x * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
-	iv.v = v.t.y * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
+	iv.v = (1.0f - v.t.y) * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
 	iv.r = float(v.c.r) * iv.w;
 	iv.g = float(v.c.g) * iv.w;
 	iv.b = float(v.c.b) * iv.w;
@@ -349,8 +349,8 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const 
 
 #define font_char_px_width  TINY3D_CHAR_WIDTH
 #define font_char_px_height TINY3D_CHAR_HEIGHT
-#define font_char_first    '!'
-#define font_char_last     '~'
+#define font_char_first     TINY3D_CHAR_FIRST
+#define font_char_last      TINY3D_CHAR_LAST
 
 #define font_char_count_width  4
 #define font_char_count_height 24

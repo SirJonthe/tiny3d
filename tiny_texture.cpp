@@ -247,7 +247,7 @@ tiny3d::UInt AverageLuminance(const tiny3d::Image &img, tiny3d::UPoint p)
 	UInt avg_lum = 0;
 	for (UInt sy = 0; sy < CCC_DIM; ++sy) {
 		for (UInt sx = 0; sx < CCC_DIM; ++sx) {
-			avg_lum += Illum(img.GetColor(UPoint{ p.x + sx, img.GetHeight() - 1 - (p.y + sy) }));
+			avg_lum += Illum(img.GetColor(UPoint{ p.x + sx, p.y + sy }));
 		}
 	}
 	return avg_lum / CCC_COUNT;
@@ -258,7 +258,7 @@ tiny3d::UHInt LookupBits(const tiny3d::Image &img, tiny3d::UPoint p, tiny3d::UIn
 	UHInt lookup = 0;
 	for (UInt sy = 0; sy < CCC_DIM; ++sy) {
 		for (UInt sx = 0; sx < CCC_DIM; ++sx) {
-			Byte lum = Illum(img.GetColor(UPoint{ p.x + sx, img.GetHeight() - 1 - (p.y + sy) }));
+			Byte lum = Illum(img.GetColor(UPoint{ p.x + sx, p.y + sy }));
 			UInt i = sx + sy * CCC_DIM;
 			if (lum <= avg_lum) {
 				ClearBit(lookup, i);
@@ -278,7 +278,7 @@ tiny3d::Color AverageColor0(const tiny3d::Image &img, tiny3d::UPoint p, tiny3d::
 		for (UInt sx = 0; sx < CCC_DIM; ++sx) {
 			if (!TestBit(lookup, sx + sy * CCC_DIM)) {
 				++num;
-				avg_col = avg_col + img.GetColor(UPoint{ p.x + sx, img.GetHeight() - 1 - (p.y + sy) });
+				avg_col = avg_col + img.GetColor(UPoint{ p.x + sx, p.y + sy });
 			}
 		}
 	}
@@ -294,7 +294,7 @@ tiny3d::Color AverageColor1(const tiny3d::Image &img, tiny3d::UPoint p, tiny3d::
 		for (UInt sx = 0; sx < CCC_DIM; ++sx) {
 			if (TestBit(lookup, sx + sy * CCC_DIM)) {
 				++num;
-				avg_col = avg_col + img.GetColor(UPoint{ p.x + sx, img.GetHeight() - 1 - (p.y + sy) });
+				avg_col = avg_col + img.GetColor(UPoint{ p.x + sx, p.y + sy });
 			}
 		}
 	}
