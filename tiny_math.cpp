@@ -725,10 +725,6 @@ tiny3d::Vector3::Vector3(tiny3d::Real _x, tiny3d::Real _y, tiny3d::Real _z) :
 	x(_x), y(_y), z(_z)
 {}
 
-tiny3d::Vector3::Vector3(const tiny3d::Vector3 &r) :
-	x(r.x), y(r.y), z(r.z)
-{}
-
 tiny3d::Vector3 &tiny3d::Vector3::operator+=(const tiny3d::Vector3 &r)
 {
 	x += r.x;
@@ -886,10 +882,6 @@ tiny3d::Vector2::Vector2(tiny3d::Real _x, tiny3d::Real _y) :
 	x(_x), y(_y)
 {}
 
-tiny3d::Vector2::Vector2(const tiny3d::Vector2 &r) :
-	x(r.x), y(r.y)
-{}
-
 tiny3d::Vector2 &tiny3d::Vector2::operator+=(const tiny3d::Vector2 &r)
 {
 	x += r.x;
@@ -1028,10 +1020,6 @@ tiny3d::Matrix3x3::Matrix3x3(const tiny3d::Vector3 &_x, const tiny3d::Vector3 &_
 
 tiny3d::Matrix3x3::Matrix3x3(tiny3d::Real xx, tiny3d::Real xy, tiny3d::Real xz, tiny3d::Real yx, tiny3d::Real yy, tiny3d::Real yz, tiny3d::Real zx, tiny3d::Real zy, tiny3d::Real zz) :
 	x(xx, xy, xz), y(yx, yy, yz), z(zx, zy, zz)
-{}
-
-tiny3d::Matrix3x3::Matrix3x3(const tiny3d::Matrix3x3 &m) :
-	x(m.x), y(m.y), z(m.z)
 {}
 
 tiny3d::Vector3 &tiny3d::Matrix3x3::operator[](tiny3d::UInt row)
@@ -1192,10 +1180,6 @@ tiny3d::Matrix2x2::Matrix2x2(const tiny3d::Vector2 &_x, const tiny3d::Vector2 &_
 
 tiny3d::Matrix2x2::Matrix2x2(tiny3d::Real xx, tiny3d::Real xy, tiny3d::Real yx, tiny3d::Real yy) :
 	x(xx, xy), y(yx, yy)
-{}
-
-tiny3d::Matrix2x2::Matrix2x2(const tiny3d::Matrix2x2 &m) :
-	x(m.x), y(m.y)
 {}
 
 tiny3d::Vector2 &tiny3d::Matrix2x2::operator[](tiny3d::UInt row)

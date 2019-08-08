@@ -236,7 +236,8 @@ public:
 public:
 	Vector3( void );
 	Vector3(Real _x, Real _y, Real _z);
-	Vector3(const Vector3 &r);
+	Vector3(const Vector3 &r) = default;
+	Vector3 &operator=(const Vector3 &r) = default;
 
 	Vector3 &operator+=(const Vector3 &r);
 	Vector3 &operator-=(const Vector3 &r);
@@ -279,7 +280,8 @@ public:
 public:
 	Vector2( void );
 	Vector2(Real _x, Real _y);
-	Vector2(const Vector2 &r);
+	Vector2(const Vector2 &r) = default;
+	Vector2 &operator=(const Vector2 &r) = default;
 
 	Vector2 &operator+=(const Vector2 &r);
 	Vector2 &operator-=(const Vector2 &r);
@@ -322,7 +324,8 @@ public:
 	Matrix3x3( void );
 	Matrix3x3(const Vector3 &_x, const Vector3 &_y, const Vector3 &_z);
 	Matrix3x3(Real xx, Real xy, Real xz, Real yx, Real yy, Real yz, Real zx, Real zy, Real zz);
-	Matrix3x3(const Matrix3x3 &m);
+	Matrix3x3(const Matrix3x3 &m) = default;
+	Matrix3x3 &operator=(const Matrix3x3 &m) = default;
 
 	Vector3 &operator[](UInt row);
 	const Vector3 &operator[](UInt row) const;
@@ -350,7 +353,8 @@ public:
 	Matrix2x2( void );
 	Matrix2x2(const Vector2 &_x, const Vector2 &_y);
 	Matrix2x2(Real xx, Real xy, Real yx, Real yy);
-	Matrix2x2(const Matrix2x2 &m);
+	Matrix2x2(const Matrix2x2 &m) = default;
+	Matrix2x2 &operator=(const Matrix2x2 &m) = default;
 
 	Vector2 &operator[](UInt row);
 	const Vector2 &operator[](UInt row) const;
@@ -376,6 +380,8 @@ private:
 public:
 	Matrix4x4( void );
 	Matrix4x4(Real xx, Real xy, Real xz, Real xw, Real yx, Real yy, Real yz, Real yw, Real zx, Real zy, Real zz, Real zw, Real wx, Real wy, Real wz, Real ww);
+	Matrix4x4(const Matrix4x4 &m) = default;
+	Matrix4x4 &operator=(const Matrix4x4 &m) = default;
 
 	Real *operator[](UInt row);
 	const Real *operator[](UInt row) const;
