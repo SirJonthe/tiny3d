@@ -13,8 +13,8 @@ namespace internal_impl
 		float w;       // 1/z
 	};
 
-	void DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
-	void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect);
 }
 
@@ -45,7 +45,7 @@ internal_impl::IVertex ToI(const tiny3d::Vertex &v)
 	return ToI(v, nullptr);
 }
 
-void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	const URect srect = URect{ { 0, 0 }, { UInt(dst.GetWidth()), UInt(dst.GetHeight()) } };
 	const URect rect = (dst_rect != nullptr) ? tiny3d::Clip(*dst_rect, srect) : srect;
@@ -56,7 +56,7 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tin
 		const UInt   zi    = q.x + q.y * dst.GetWidth();
 //		const float  sz    = a.v.z.ToFloat();
 		const float  sz    = a.v.z;
-		const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
+		const float  dz    = (zread != nullptr) ? (*zread)[zi] : std::numeric_limits<float>::infinity();
 
 		if (sz <= dz && pixel.blend != Color::Transparent) {
 
@@ -67,14 +67,14 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tin
 			{
 			case Color::Solid:
 				dst.SetColor(q, Dither2x2(texel * col, q));
-				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+				if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
 				break;
 			case Color::AddAlpha:
 				dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * col, q));
 				break;
 			case Color::Emissive:
 				dst.SetColor(q, texel);
-				if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+				if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
 				break;
 			case Color::EmissiveAddAlpha:
 				dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
@@ -85,7 +85,7 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tin
 	}
 }
 
-void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	SInt min_x = 0;
 	SInt max_x = SInt(dst.GetWidth()) - 1;
@@ -126,7 +126,7 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 			const Color  pixel = dst.GetColor(q);
 			const UInt   zi    = q.x + q.y * dst.GetWidth();
 			const float  sz    = 1 / W;
-			const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
+			const float  dz    = (zread != nullptr) ? (*zread)[zi] : std::numeric_limits<float>::infinity();
 
 			if (sz <= dz && pixel.blend != Color::Transparent) { // use transparency bit as a 1-bit stencil
 
@@ -143,14 +143,14 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 				{
 				case Color::Solid:
 					dst.SetColor(q, Dither2x2(texel * col, q));
-					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+					if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
 					break;
 				case Color::AddAlpha:
 					dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * col, q));
 					break;
 				case Color::Emissive:
 					dst.SetColor(q, texel);
-					if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+					if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
 					break;
 				case Color::EmissiveAddAlpha:
 					dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
@@ -171,9 +171,9 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, int
 	}
 }
 
-void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawLine(dst, zbuf, ToI(a, tex), ToI(b, tex), tex, dst_rect);
+	internal_impl::DrawLine(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), tex, dst_rect);
 }
 
 tiny3d::SXInt DetermineHalfspace(tiny3d::Point a, tiny3d::Point b, tiny3d::Point point)
@@ -206,18 +206,18 @@ internal_impl::IVertex MidVertex(const internal_impl::IVertex &a, const internal
 	return ab;
 }
 
-void DrawSubdivTri(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void DrawSubdivTri(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	internal_impl::IVertex ab = MidVertex(a, b);
 	internal_impl::IVertex bc = MidVertex(b, c);
 	internal_impl::IVertex ca = MidVertex(c, a);
-	internal_impl::DrawTriangle(dst, zbuf, a,  ab, ca, tex, dst_rect);
-	internal_impl::DrawTriangle(dst, zbuf, ab, b,  bc, tex, dst_rect);
-	internal_impl::DrawTriangle(dst, zbuf, ca, bc, c,  tex, dst_rect);
-	internal_impl::DrawTriangle(dst, zbuf, ca, ab, bc, tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zread, zwrite, a,  ab, ca, tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zread, zwrite, ab, b,  bc, tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zread, zwrite, ca, bc, c,  tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zread, zwrite, ca, ab, bc, tex, dst_rect);
 }
 
-void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	// AABB Clipping
 	SInt min_y = tiny3d::Max(tiny3d::Min(a.p.y, b.p.y, c.p.y), SInt(0));
@@ -285,7 +285,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 				const Color  pixel = dst.GetColor(q);
 				const UInt   zi    = q.x + q.y * dst.GetWidth();
 				const float  sz    = 1.0f / (a.w * l0 + b.w * l1 + c.w * l2);
-				const float  dz    = (zbuf != nullptr) ? (*zbuf)[zi] : std::numeric_limits<float>::infinity();
+				const float  dz    = (zread != nullptr) ? (*zread)[zi] : std::numeric_limits<float>::infinity();
 
 				if (sz <= dz && pixel.blend != Color::Transparent) { // use transparency bit as a 1-bit stencil
 
@@ -306,14 +306,14 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 					{
 					case Color::Solid:
 						dst.SetColor(q, Dither2x2(texel * col, q));
-						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+						if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
 						break;
 					case Color::AddAlpha:
 						dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * col, q));
 						break;
 					case Color::Emissive:
 						dst.SetColor(q, texel);
-						if (zbuf != nullptr) { (*zbuf)[zi] = sz; }
+						if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
 						break;
 					case Color::EmissiveAddAlpha:
 						dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
@@ -342,9 +342,9 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf,
 	}
 }
 
-void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zbuf, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
-	internal_impl::DrawTriangle(dst, zbuf, ToI(a, tex), ToI(b, tex), ToI(c, tex), tex, dst_rect);
+	internal_impl::DrawTriangle(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), ToI(c, tex), tex, dst_rect);
 }
 
 #define font_char_px_width  TINY3D_CHAR_WIDTH

@@ -136,6 +136,21 @@ void tiny3d::Image::ClearStencil(tiny3d::URect rect, tiny3d::Color::BlendMode st
 	}
 }
 
+tiny3d::Color::BlendMode tiny3d::Image::GetStencil(tiny3d::UPoint p) const
+{
+	UInt i = p.x * m_width * p.y;
+	TINY3D_ASSERT(i < m_width * m_height);
+	return (m_pixels[i] & 0x8000) ? tiny3d::Color::Solid : tiny3d::Color::Transparent;
+}
+
+void tiny3d::Image::SetStencil(tiny3d::UPoint p, tiny3d::Color::BlendMode stencil)
+{
+	UInt i = p.x * m_width * p.y;
+	TINY3D_ASSERT(i < m_width * m_height);
+	UHInt pixel_mask = 0xFFFF & ((stencil & 1) << 15);
+	m_pixels[i] &= pixel_mask;
+}
+
 tiny3d::UInt tiny3d::Image::GetWidth( void ) const
 {
 	return m_width;

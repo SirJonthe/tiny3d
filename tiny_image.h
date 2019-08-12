@@ -32,7 +32,10 @@ public:
 	void Copy(const tiny3d::Image &i);
 	void Fill(tiny3d::URect rect, tiny3d::Color color);
 	void Fill(tiny3d::Color color);
-	void ClearStencil(tiny3d::URect rect, tiny3d::Color::BlendMode stencil = tiny3d::Color::Solid);
+
+	void                     ClearStencil(tiny3d::URect rect, tiny3d::Color::BlendMode stencil = tiny3d::Color::Solid);
+	tiny3d::Color::BlendMode GetStencil(tiny3d::UPoint p) const;
+	void                     SetStencil(tiny3d::UPoint p, tiny3d::Color::BlendMode stencil);
 
 	tiny3d::UInt  GetWidth( void )  const;
 	tiny3d::UInt  GetHeight( void ) const;
