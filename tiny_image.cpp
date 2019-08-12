@@ -126,13 +126,21 @@ void tiny3d::Image::ClearStencil(tiny3d::URect rect, tiny3d::Color::BlendMode st
 		{ Max(UInt(0), rect.a.x), Max(UInt(0), rect.a.y) },
 		{ Min(UInt(m_width), rect.b.x), Min(UInt(m_height), rect.b.y) }
 	};
-	UHInt pixel_mask = 0xFFFF & ((stencil & 1) << 15);
 	UHInt *pixel_row = m_pixels + (dst.a.y * m_width);
-	for (UInt y = dst.a.y; y < dst.b.y; ++y) {
-		for (UInt x = dst.a.x; x < dst.b.x; ++x) {
-			pixel_row[x] &= pixel_mask;
+	if ((stencil & 1) == 1) {
+		for (UInt y = dst.a.y; y < dst.b.y; ++y) {
+			for (UInt x = dst.a.x; x < dst.b.x; ++x) {
+				pixel_row[x] |= UHInt(1 << 15);
+			}
+			pixel_row += m_width;
 		}
-		pixel_row += m_width;
+	} else {
+		for (UInt y = dst.a.y; y < dst.b.y; ++y) {
+			for (UInt x = dst.a.x; x < dst.b.x; ++x) {
+				pixel_row[x] &= UHInt(~(1 << 15));
+			}
+			pixel_row += m_width;
+		}
 	}
 }
 
@@ -147,8 +155,7 @@ void tiny3d::Image::SetStencil(tiny3d::UPoint p, tiny3d::Color::BlendMode stenci
 {
 	UInt i = p.x + m_width * p.y;
 	TINY3D_ASSERT(i < m_width * m_height);
-	UHInt pixel_mask = 0xFFFF & ((stencil & 1) << 15);
-	m_pixels[i] &= pixel_mask;
+	m_pixels[i] = (stencil & 1) == 1 ? m_pixels[i] | UHInt(1 << 15) : m_pixels[i] & UHInt(~(1 << 15));
 }
 
 tiny3d::UInt tiny3d::Image::GetWidth( void ) const
