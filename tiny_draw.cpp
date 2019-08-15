@@ -8,13 +8,22 @@ namespace internal_impl
 	struct IVertex
 	{
 		Point p;
-		float u, v;    // 1/tcoord
+		float u, v;    // 1/tcoord (non-normalized)
 		float r, g, b; // 1/color
 		float w;       // 1/z
 	};
 
-	void DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
-	void DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	struct ILVertex
+	{
+		Point p;
+		float u, v;   // 1/tcoord (non-normalized)
+		float lu, lv; // 1/lcoord (non-normalized)
+		float w;      // 1/z
+	};
+
+	void DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::ILVertex &a, const internal_impl::ILVertex &b, const internal_impl::ILVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect);
 	tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect);
 }
 
@@ -40,12 +49,28 @@ internal_impl::IVertex ToI(const tiny3d::Vertex &v, const tiny3d::Texture *tex)
 	return iv;
 }
 
+internal_impl::ILVertex ToI(const tiny3d::LVertex &v, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap)
+{
+	internal_impl::ILVertex iv;
+	iv.p.x = SInt(v.v.x);
+	iv.p.y = SInt(v.v.y);
+//	iv.w   = 1.0f / v.v.z.ToFloat();
+	iv.w   = 1.0f / v.v.z;
+//	iv.u = v.t.x.ToFloat() * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
+//	iv.v = (1.0f - v.t.y.ToFloat()) * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
+	iv.u = v.t.x * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
+	iv.v = (1.0f - v.t.y) * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
+	iv.u = v.l.x * float(lightmap.GetWidth()) * iv.w;
+	iv.v = (1.0f - v.l.y) * float(lightmap.GetHeight()) * iv.w;
+	return iv;
+}
+
 internal_impl::IVertex ToI(const tiny3d::Vertex &v)
 {
 	return ToI(v, nullptr);
 }
 
-void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawPoint(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	const URect srect = URect{ { 0, 0 }, { UInt(dst.GetWidth()), UInt(dst.GetHeight()) } };
 	const URect rect = (dst_rect != nullptr) ? tiny3d::Clip(*dst_rect, srect) : srect;
@@ -85,7 +110,7 @@ void tiny3d::DrawPoint(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::
 	}
 }
 
-void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void internal_impl::DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	SInt min_x = 0;
 	SInt max_x = SInt(dst.GetWidth()) - 1;
@@ -171,7 +196,7 @@ void internal_impl::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, ti
 	}
 }
 
-void tiny3d::DrawLine(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	internal_impl::DrawLine(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), tex, dst_rect);
 }
@@ -206,7 +231,7 @@ internal_impl::IVertex MidVertex(const internal_impl::IVertex &a, const internal
 	return ab;
 }
 
-void DrawSubdivTri(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void DrawSubdivTri(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	internal_impl::IVertex ab = MidVertex(a, b);
 	internal_impl::IVertex bc = MidVertex(b, c);
@@ -217,7 +242,7 @@ void DrawSubdivTri(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Arra
 	internal_impl::DrawTriangle(dst, zread, zwrite, ca, ab, bc, tex, dst_rect);
 }
 
-void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	// AABB Clipping
 	SInt min_y = tiny3d::Max(tiny3d::Min(a.p.y, b.p.y, c.p.y), SInt(0));
@@ -342,9 +367,117 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread
 	}
 }
 
-void tiny3d::DrawTriangle(tiny3d::Image &dst, tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+void tiny3d::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	internal_impl::DrawTriangle(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), ToI(c, tex), tex, dst_rect);
+}
+
+void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::ILVertex &a, const internal_impl::ILVertex &b, const internal_impl::ILVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect)
+{
+	// AABB Clipping
+	SInt min_y = tiny3d::Max(tiny3d::Min(a.p.y, b.p.y, c.p.y), SInt(0));
+	SInt max_y = tiny3d::Min(tiny3d::Max(a.p.y, b.p.y, c.p.y), SInt(dst.GetHeight() - 1));
+	if (max_y - min_y <= 0) { return; }
+	SInt min_x = tiny3d::Max(tiny3d::Min(a.p.x, b.p.x, c.p.x), SInt(0));
+	SInt max_x = tiny3d::Min(tiny3d::Max(a.p.x, b.p.x, c.p.x), SInt(dst.GetWidth() - 1));
+	if (max_x - min_x <= 0) { return; }
+
+	if (dst_rect != nullptr) {
+		min_y = SInt(tiny3d::Max(UInt(min_y), dst_rect->a.y));
+		max_y = SInt(tiny3d::Min(UInt(max_y), dst_rect->b.y - 1));
+		min_x = SInt(tiny3d::Max(UInt(min_x), dst_rect->a.x));
+		max_x = SInt(tiny3d::Min(UInt(max_x), dst_rect->b.x - 1));
+	}
+
+	// Triangle setup
+	tiny3d::Point p    = { min_x, min_y };
+	SXInt         w0_y = DetermineHalfspace(b.p, c.p, p);
+	SXInt         w1_y = DetermineHalfspace(c.p, a.p, p);
+	SXInt         w2_y = DetermineHalfspace(a.p, b.p, p);
+
+//	if (ShouldDivide(w0_y + w1_y + w2_y)) {
+//		DrawSubdivTri(dst, zbuf, a, b, c, tex, dst_rect);
+//		return;
+//	}
+
+	// Interpolation/triangle setup
+	const SInt w2_x_inc        = a.p.y - b.p.y;
+	const SInt w2_y_inc        = b.p.x - a.p.x;
+	const SInt w0_x_inc        = b.p.y - c.p.y;
+	const SInt w0_y_inc        = c.p.x - b.p.x;
+	const SInt w1_x_inc        = c.p.y - a.p.y;
+	const SInt w1_y_inc        = a.p.x - c.p.x;
+	const float sum_inv_area_x2 = 1.0f / SInt(w0_y + w1_y + w2_y);
+	float l0_y           = SInt(w0_y) * sum_inv_area_x2;
+	float l1_y           = SInt(w1_y) * sum_inv_area_x2;
+	float l2_y           = SInt(w2_y) * sum_inv_area_x2;
+	const float l0_x_inc = w0_x_inc * sum_inv_area_x2;
+	const float l1_x_inc = w1_x_inc * sum_inv_area_x2;
+	const float l2_x_inc = w2_x_inc * sum_inv_area_x2;
+	const float l0_y_inc = w0_y_inc * sum_inv_area_x2;
+	const float l1_y_inc = w1_y_inc * sum_inv_area_x2;
+	const float l2_y_inc = w2_y_inc * sum_inv_area_x2;
+
+	w0_y += IsTopLeft(b.p, c.p) ? 0 : -1; // add offsets to coordinates to enforce fill convention
+	w1_y += IsTopLeft(c.p, a.p) ? 0 : -1;
+	w2_y += IsTopLeft(a.p, b.p) ? 0 : -1;
+
+	for (p.y = min_y; p.y <= max_y; ++p.y) {
+
+		SInt w0 = SInt(w0_y);
+		SInt w1 = SInt(w1_y);
+		SInt w2 = SInt(w2_y);
+
+		float l0 = l0_y;
+		float l1 = l1_y;
+		float l2 = l2_y;
+
+		for (p.x = min_x; p.x <= max_x; ++p.x) {
+
+			if ((w0 | w1 | w2) >= 0) {
+
+				const UPoint q     = { UInt(p.x), UInt(p.y) };
+				const Color  pixel = dst.GetColor(q);
+				const UInt   zi    = q.x + q.y * dst.GetWidth();
+				const float  sz    = 1.0f / (a.w * l0 + b.w * l1 + c.w * l2);
+				const float  dz    = (zread != nullptr) ? (*zread)[zi] : std::numeric_limits<float>::infinity();
+
+				if (sz <= dz && pixel.blend != Color::Transparent) { // use transparency bit as a 1-bit stencil
+
+					const float L0 = l0 * sz;
+					const float L1 = l1 * sz;
+					const float L2 = l2 * sz;
+
+					const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
+					const Color lumel = lightmap.GetColor(UPoint{ UInt(a.lu * L0 + b.lu * L1 + c.lu * L2), UInt(a.lv * L0 + b.lv * L1 + c.lv * L2) }); // TODO: maybe dither or blend this result?
+
+					dst.SetColor(q, Dither2x2(texel * lumel, q));
+					if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
+				}
+			}
+
+			w0 += w0_x_inc;
+			w1 += w1_x_inc;
+			w2 += w2_x_inc;
+
+			l0 += l0_x_inc;
+			l1 += l1_x_inc;
+			l2 += l2_x_inc;
+		}
+
+		w0_y += w0_y_inc;
+		w1_y += w1_y_inc;
+		w2_y += w2_y_inc;
+
+		l0_y += l0_y_inc;
+		l1_y += l1_y_inc;
+		l2_y += l2_y_inc;
+	}
+}
+
+void tiny3d::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::LVertex &a, const tiny3d::LVertex &b, const tiny3d::LVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect)
+{
+	internal_impl::DrawTriangle(dst, zread, zwrite, ToI(a, tex, lightmap), ToI(b, tex, lightmap), ToI(c, tex, lightmap), tex, lightmap, dst_rect);
 }
 
 #define font_char_px_width  TINY3D_CHAR_WIDTH

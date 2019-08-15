@@ -65,6 +65,20 @@ struct Vertex
 	Color   c;
 };
 
+struct LVertex
+{
+	Vector3 v;
+	Vector2 t;
+	Vector2 l;
+};
+
+enum SampleMode
+{
+	SampleMode_Nearest,
+	SampleMode_Dither,
+	SampleMode_Bilinear,
+};
+
 template < typename type_t >
 class Array
 {
