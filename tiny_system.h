@@ -34,7 +34,7 @@ typedef uint16_t UHInt;
 typedef int16_t  SHInt;
 typedef uint8_t  Byte;
 
-namespace System
+/*namespace System
 {
 	bool         Init(tiny3d::UInt width, tiny3d::UInt height, const std::string &caption);
 	void         Close( void );
@@ -47,7 +47,7 @@ namespace System
 		tiny3d::UInt Width( void );
 		tiny3d::UInt Height( void );
 	}
-};
+};*/
 
 }
 

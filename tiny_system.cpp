@@ -1,4 +1,4 @@
-#include <SDL/SDL.h>
+/*#include <SDL/SDL.h>
 
 #include "tiny_system.h"
 #include "tiny_image.h"
@@ -81,4 +81,4 @@ tiny3d::UInt tiny3d::System::Video::Width( void )
 tiny3d::UInt tiny3d::System::Video::Height( void )
 {
 	return tiny3d::UInt(SDL_GetVideoSurface()->h);
-}
+}*/
