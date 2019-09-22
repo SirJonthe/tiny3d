@@ -131,11 +131,11 @@ tiny3d::Color tiny3d::Dither8x8(tiny3d::Color c, tiny3d::UPoint p)
 tiny3d::UPoint tiny3d::Dither2x2(tiny3d::Vector2 texture_space_uv, tiny3d::UPoint p)
 {
 	// texture_space_uv has to be non-normalized (i.e. normalized texture coordinates multiplied with texture dimensions).
-	static const float xkernel[4] = {
+	static constexpr float xkernel[4] = {
 		0.25f, 0.50f,
 		0.75f, 0.00f
 	};
-	static const float ykernel[4] = {
+	static constexpr float ykernel[4] = {
 		0.00f, 0.75f,
 		0.50f, 0.25f
 	};
