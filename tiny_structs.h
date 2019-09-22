@@ -56,6 +56,8 @@ Color Dither3x3(Color c, UPoint p);
 Color Dither4x4(Color c, UPoint p);
 Color Dither8x8(Color c, UPoint p);
 
+UPoint Dither2x2(Vector2 texture_space_uv, UPoint p);
+
 Byte Illum(Color c);
 
 struct Vertex

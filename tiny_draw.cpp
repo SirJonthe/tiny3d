@@ -326,6 +326,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> 
 					};
 
 					const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
+//					const Color texel = (tex != nullptr) ? tex->GetColor(Dither2x2(Vector2{ a.u * L0 + b.u * L1 + c.u * L2, a.v * L0 + b.v * L1 + c.v * L2}, q)) : Color{ 255, 255, 255, Color::Solid };
 
 					switch (texel.blend)
 					{
@@ -449,7 +450,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> 
 					const float L2 = l2 * sz;
 
 					const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
-					const Color lumel = lightmap.GetColor(UPoint{ UInt(a.lu * L0 + b.lu * L1 + c.lu * L2), UInt(a.lv * L0 + b.lv * L1 + c.lv * L2) }); // TODO: maybe dither or blend this result?
+					const Color lumel = lightmap.GetColor(Dither2x2(Vector2{ a.lu * L0 + b.lu * L1 + c.lu * L2, a.lv * L0 + b.lv * L1 + c.lv * L2 }, q));
 
 					dst.SetColor(q, Dither2x2(texel * lumel, q));
 					if (zwrite != nullptr) { (*zwrite)[zi] = sz; }

@@ -128,6 +128,22 @@ tiny3d::Color tiny3d::Dither8x8(tiny3d::Color c, tiny3d::UPoint p)
 	return Dither(c, p, D8x8, 8);
 }
 
+tiny3d::UPoint tiny3d::Dither2x2(tiny3d::Vector2 texture_space_uv, tiny3d::UPoint p)
+{
+	// texture_space_uv has to be non-normalized (i.e. normalized texture coordinates multiplied with texture dimensions).
+	static const float xkernel[4] = {
+		0.25f, 0.50f,
+		0.75f, 0.00f
+	};
+	static const float ykernel[4] = {
+		0.00f, 0.75f,
+		0.50f, 0.25f
+	};
+	texture_space_uv.x += xkernel[(p.y&1) * 2 + (p.x&1)];
+	texture_space_uv.y += ykernel[(p.y&1) * 2 + (p.x&1)];
+	return UPoint{ UInt(texture_space_uv.x), UInt(texture_space_uv.y) };
+}
+
 tiny3d::Byte tiny3d::Illum(tiny3d::Color c)
 {
 	// r = ~20%, g = ~70%, b = ~10%
