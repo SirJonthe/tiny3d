@@ -42,6 +42,9 @@ public:
 	tiny3d::Color GetColor(tiny3d::UPoint p) const;
 	void          SetColor(tiny3d::UPoint p, tiny3d::Color color);
 
+	void FlipX( void );
+	void FlipY( void );
+
 	tiny3d::Image &operator=(const tiny3d::Image &i);
 
 	static constexpr tiny3d::UInt MaxDimension( void ) { return 0x400; }
