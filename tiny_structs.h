@@ -60,6 +60,9 @@ UPoint Dither2x2(Vector2 texture_space_uv, UPoint p);
 
 Byte Illum(Color c);
 
+Color Decode(UHInt c);
+UHInt Encode(Color c);
+
 struct Vertex
 {
 	Vector3 v;

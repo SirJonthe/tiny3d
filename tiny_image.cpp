@@ -4,34 +4,24 @@ using namespace tiny3d;
 
 tiny3d::UHInt tiny3d::Image::EncodePixel(tiny3d::Color color) const
 {
-
 	// bits = M BBBBB GGGGG RRRRR
-	UInt r = (((UInt(color.r) + 1) * 0x100) - 1) >> 11;
-	UInt g = (((UInt(color.g) + 1) * 0x100) - 1) >> 11;
-	UInt b = (((UInt(color.b) + 1) * 0x100) - 1) >> 11;
-	UInt stencil = UInt(color.blend & 1) << 15;
-	UHInt pixel = UHInt(stencil) | UHInt(b << 10) | UHInt(g << 5) | UHInt(r);
+	constexpr UInt FIX_SCALAR = (32 << 8) / 255;
+	const UInt r = (UInt(color.r) * FIX_SCALAR) >> 8;
+	const UInt g = (UInt(color.g) * FIX_SCALAR) >> 8;
+	const UInt b = (UInt(color.b) * FIX_SCALAR) >> 8;
+	const UInt stencil = UInt(color.blend & 1) << 15;
+	const UHInt pixel = UHInt(stencil) | UHInt(b << 10) | UHInt(g << 5) | UHInt(r);
 	return pixel;
 }
 
 tiny3d::Color tiny3d::Image::DecodePixel(tiny3d::UHInt pixel) const
 {
 	// bits = M BBBBB GGGGG RRRRR
-	UInt r =
-		(((pixel & 0x001F) + 1)        // convert channel to number with 1 bit of range and 5 bits of precision
-		* 0x100                        // multiply by 1 with 1 bit of range and 8 bits of precision, resulting in a number with 13 bits of precision
-		- 1)                           // subtract 1 to compress number back to 0 bits of range and 13 bits of precision
-		>> 5;                          // shift away 5 bits of precision to keep a number with 0 bits of range and 8 bits of precision
-	UInt g =
-		((((pixel & 0x03E0) >> 5) + 1)
-		* 0x100
-		- 1)
-		>> 5;
-	UInt b =
-		((((pixel & 0x7C00) >> 10) + 1)
-		* 0x100
-		- 1)
-		>> 5;
+	constexpr UInt FIX_SCALAR = (256 << 8) / 31;
+	const UInt p32 = UInt(pixel);
+	const UInt r = ((p32 & 0x001F) * FIX_SCALAR) >> 8;
+	const UInt g = (((p32 & 0x03E0) * FIX_SCALAR) >> 13);
+	const UInt b = (((p32 & 0x7C00) * FIX_SCALAR) >> 18);
 	Color color;
 	color.r = Byte(r);
 	color.g = Byte(g);

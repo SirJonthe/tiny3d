@@ -147,9 +147,41 @@ tiny3d::UPoint tiny3d::Dither2x2(tiny3d::Vector2 texture_space_uv, tiny3d::UPoin
 tiny3d::Byte tiny3d::Illum(tiny3d::Color c)
 {
 	// r = ~20%, g = ~70%, b = ~10%
-	UInt r = UInt(c.r) * 2;
-	UInt g = UInt(c.g) * 7;
-	UInt b = UInt(c.b);
-	UInt gray = (r + g + b) / 10;
+	const UInt r = UInt(c.r) * 2;
+	const UInt g = UInt(c.g) * 7;
+	const UInt b = UInt(c.b);
+	const UInt gray = (r + g + b) / 10;
 	return Byte(gray);
+}
+
+tiny3d::Color tiny3d::Decode(tiny3d::UHInt c)
+{
+	// https://stackoverflow.com/questions/5209020/5-bit-rgb-0-31-0-to-16-bit-rgb-0-255-0
+
+	// bits = M BBBBB GGGGG RRRRR
+	constexpr UInt FIX_SCALAR = (256<<8) / 31; // NOTE: should be 255 instead of 256, but then rounding errors will cause 31 to be translated to 254 - HOWEVER, if scalar is a floating point type, then use 255
+	const UInt c32 = UInt(c);
+	const UInt r = ((c32 & 0x001F) * FIX_SCALAR) >> 8;
+	const UInt g = (((c32 & 0x03E0) * FIX_SCALAR) >> 13);
+	const UInt b = (((c32 & 0x7C00) * FIX_SCALAR) >> 18);
+	Color color;
+	color.r = Byte(r);
+	color.g = Byte(g);
+	color.b = Byte(b);
+	color.blend = (c & 0x8000) ? Color::Solid : Color::Transparent;
+	return color;
+}
+
+tiny3d::UHInt tiny3d::Encode(tiny3d::Color c)
+{
+	// https://stackoverflow.com/questions/5209020/5-bit-rgb-0-31-0-to-16-bit-rgb-0-255-0
+
+	// bits = M BBBBB GGGGG RRRRR
+	constexpr UInt FIX_SCALAR = (32<<8) / 255; // NOTE: should be 31 instead of 32, but then rounding errors will cause 255 to be translated to 30 - HOWEVER, if scalar is a floating point type, then use 31
+	const UInt r = (UInt(c.r) * FIX_SCALAR) >> 8;
+	const UInt g = (UInt(c.g) * FIX_SCALAR) >> 8;
+	const UInt b = (UInt(c.b) * FIX_SCALAR) >> 8;
+	const UInt stencil = UInt(c.blend & 1) << 15;
+	const UHInt pixel = UHInt(stencil) | UHInt(b << 10) | UHInt(g << 5) | UHInt(r);
+	return pixel;
 }
