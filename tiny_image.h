@@ -106,6 +106,11 @@ public:
 	//   color -> The color to set.
 	void          SetColor(tiny3d::UPoint p, tiny3d::Color color);
 
+	// @algo SetColorKey
+	// @info Sets the color matching the key to Transparent.
+	// @in key -> The color to make transparent.
+	void SetColorKey(tiny3d::Color key);
+	
 	// @algo FlipX
 	// @info Mirror the image in the X axis.
 	void FlipX( void );

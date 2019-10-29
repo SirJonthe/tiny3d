@@ -172,6 +172,18 @@ void tiny3d::Image::SetColor(tiny3d::UPoint p, tiny3d::Color color)
 	m_pixels[i] = EncodePixel(color);
 }
 
+void tiny3d::Image::SetColorKey(tiny3d::Color key)
+{
+	const tiny3d::UHInt A = EncodePixel(tiny3d::Color{ key.r, key.g, key.b, tiny3d::Color::Solid });
+	const tiny3d::UHInt B = EncodePixel(tiny3d::Color{ key.r, key.g, key.b, tiny3d::Color::Transparent });
+	const tiny3d::UInt  PixelCount = m_width * m_height;
+	for (tiny3d::UInt i = 0; i < PixelCount; ++i) {
+		if (m_pixels[i] == A) {
+			m_pixels[i] = B;
+		}
+	}
+}
+
 void tiny3d::Image::FlipX( void )
 {
 	const UInt  hw = m_width / 2;
