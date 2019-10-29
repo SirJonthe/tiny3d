@@ -51,10 +51,24 @@ typedef uint8_t  Byte;
 
 }
 
+// @data TINY3D_BITS_PER_BYTE
+// @info The bits per Tiny3d byte.
 #define TINY3D_BITS_PER_BYTE            (CHAR_BIT * sizeof(Byte))
+
+// @data TINY3D_BITS_PER_WORD
+// @info The bits per Tiny3d word.
 #define TINY3D_BITS_PER_WORD            (CHAR_BIT * sizeof(Word))
+
+// @data TINY3D_BYTE_MAX
+// @info The maximum value of a Tiny3d byte.
 #define TINY3D_BYTE_MAX                 std::numeric_limits<Byte>::max()
+
+// @data TINY3D_BITS_PER_COLOR_CHANNEL
+// @info The number of bits per compressed color channel.
 #define TINY3D_BITS_PER_COLOR_CHANNEL   5
+
+// @data TINY3D_SHADES_PER_COLOR_CHANNEL
+// @info The number of shades per color channel.
 #define TINY3D_SHADES_PER_COLOR_CHANNEL 32
 
 #endif // TINY_SYSTEM_H
