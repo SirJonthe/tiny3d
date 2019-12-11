@@ -1,5 +1,6 @@
 #include "tiny_draw.h"
 #include "tiny_math.h"
+#include "tiny_simd.h"
 
 using namespace tiny3d;
 
@@ -23,6 +24,7 @@ namespace internal_impl
 
 	void DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, internal_impl::IVertex a, internal_impl::IVertex b, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
+	void DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::ILVertex &a, const internal_impl::ILVertex &b, const internal_impl::ILVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect);
 	tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect);
 }
@@ -60,8 +62,8 @@ internal_impl::ILVertex ToI(const tiny3d::LVertex &v, const tiny3d::Texture *tex
 //	iv.v = (1.0f - v.t.y.ToFloat()) * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
 	iv.u = v.t.x * (tex != nullptr ? float(tex->GetWidth()) : 1.0f) * iv.w;
 	iv.v = (1.0f - v.t.y) * (tex != nullptr ? float(tex->GetHeight()) : 1.0f) * iv.w;
-	iv.u = v.l.x * float(lightmap.GetWidth()) * iv.w;
-	iv.v = (1.0f - v.l.y) * float(lightmap.GetHeight()) * iv.w;
+	iv.lu = v.l.x * float(lightmap.GetWidth()) * iv.w;
+	iv.lv = (1.0f - v.l.y) * float(lightmap.GetHeight()) * iv.w;
 	return iv;
 }
 
@@ -201,9 +203,23 @@ void tiny3d::DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tin
 	internal_impl::DrawLine(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), tex, dst_rect);
 }
 
+struct WidePoint
+{
+	WideSInt x, y;
+};
+struct WideColor
+{
+	WideSInt r, g, b, blend;
+};
+
 tiny3d::SXInt DetermineHalfspace(tiny3d::Point a, tiny3d::Point b, tiny3d::Point point)
 {
 	return tiny3d::SXInt(b.x - a.x) * tiny3d::SXInt(point.y - a.y) - tiny3d::SXInt(b.y - a.y) * tiny3d::SXInt(point.x - a.x);
+}
+
+tiny3d::WideSInt DetermineHalfspace_Fast(tiny3d::Point a, tiny3d::Point b, const WidePoint &point)
+{
+	return WideSInt(b.x - a.x) * (point.y - WideSInt(a.y)) - WideSInt(b.y - a.y) * (point.x - WideSInt(a.x));
 }
 
 bool IsTopLeft(tiny3d::Point a, tiny3d::Point b)
@@ -326,7 +342,7 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> 
 					};
 
 					const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
-//					const Color texel = (tex != nullptr) ? tex->GetColor(Dither2x2(Vector2{ a.u * L0 + b.u * L1 + c.u * L2, a.v * L0 + b.v * L1 + c.v * L2}, q)) : Color{ 255, 255, 255, Color::Solid };
+//					const Color texel = (tex != nullptr) ? tex->GetColor(Dither2x2(Vector2{ a.u * L0 + b.u * L1 + c.u * L2, a.v * L0 + b.v * L1 + c.v * L2}, q)) : Color{ 255, 255, 255, Color::Solid }; // Dithered texture filtering (can look good if texture is relatively high resolution)
 
 					switch (texel.blend)
 					{
@@ -368,9 +384,181 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> 
 	}
 }
 
+void internal_impl::DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+{
+	constexpr int SIMD_X_TILE      = TINY_WIDTH;
+	constexpr int SIMD_Y_TILE      = 1;
+	constexpr int X_COORD_OFFSET[] = TINY_OFFSETS;
+	constexpr int Y_COORD_OFFSET[] = TINY_NO_OFFSETS;
+
+	// AABB Clipping
+	// TODO; Clipping probably needs to be adjusted for non-linear SIMD access
+	SInt min_y = tiny3d::Max(tiny3d::Min(a.p.y, b.p.y, c.p.y), SInt(0));
+	SInt max_y = tiny3d::Min(tiny3d::Max(a.p.y, b.p.y, c.p.y), SInt(dst.GetHeight() - 1));
+	if (max_y - min_y <= 0) { return; }
+	SInt min_x = tiny3d::Max(tiny3d::Min(a.p.x, b.p.x, c.p.x), SInt(0));
+	SInt max_x = tiny3d::Min(tiny3d::Max(a.p.x, b.p.x, c.p.x), SInt(dst.GetWidth() - 1));
+	if (max_x - min_x <= 0) { return; }
+
+	if (dst_rect != nullptr) {
+		min_y = SInt(tiny3d::Max(UInt(min_y), dst_rect->a.y));
+		max_y = SInt(tiny3d::Min(UInt(max_y), dst_rect->b.y - 1));
+		min_x = SInt(tiny3d::Max(UInt(min_x), dst_rect->a.x));
+		max_x = SInt(tiny3d::Min(UInt(max_x), dst_rect->b.x - 1));
+	}
+
+	// Interpolation/triangle setup
+	const WidePoint p        = { WideSInt(min_x) + WideSInt(X_COORD_OFFSET), WideSInt(min_y) + WideSInt(Y_COORD_OFFSET) };
+	WidePoint       q        = p;
+	WideSInt        w0_y     = DetermineHalfspace_Fast(b.p, c.p, p);
+	WideSInt        w1_y     = DetermineHalfspace_Fast(c.p, a.p, p);
+	WideSInt        w2_y     = DetermineHalfspace_Fast(a.p, b.p, p);
+	const WideSInt  w2_x_inc = (a.p.y - b.p.y) * SIMD_X_TILE;
+	const WideSInt  w2_y_inc = (b.p.x - a.p.x) * SIMD_Y_TILE;
+	const WideSInt  w0_x_inc = (b.p.y - c.p.y) * SIMD_X_TILE;
+	const WideSInt  w0_y_inc = (c.p.x - b.p.x) * SIMD_Y_TILE;
+	const WideSInt  w1_x_inc = (c.p.y - a.p.y) * SIMD_X_TILE;
+	const WideSInt  w1_y_inc = (a.p.x - c.p.x) * SIMD_Y_TILE;
+	WideReal        l0_y     = WideReal(w0_y);
+	WideReal        l1_y     = WideReal(w1_y);
+	WideReal        l2_y     = WideReal(w2_y);
+	const WideReal  l0_x_inc = WideReal(w0_x_inc);
+	const WideReal  l1_x_inc = WideReal(w1_x_inc);
+	const WideReal  l2_x_inc = WideReal(w2_x_inc);
+	const WideReal  l0_y_inc = WideReal(w0_y_inc);
+	const WideReal  l1_y_inc = WideReal(w1_y_inc);
+	const WideReal  l2_y_inc = WideReal(w2_y_inc);
+	const WideReal  waw      = a.w;
+	const WideReal  wbw      = b.w;
+	const WideReal  wcw      = c.w;
+
+	w0_y += IsTopLeft(b.p, c.p) ? WideSInt(0) : WideSInt(-1); // add offsets to coordinates to enforce fill convention
+	w1_y += IsTopLeft(c.p, a.p) ? WideSInt(0) : WideSInt(-1);
+	w2_y += IsTopLeft(a.p, b.p) ? WideSInt(0) : WideSInt(-1);
+
+	const float *zread_offset  = zread  != nullptr ? &((*zread)[UInt(min_x) + dst.GetWidth() * UInt(min_y)])  : nullptr;
+	float       *zwrite_offset = zwrite != nullptr ? &((*zwrite)[UInt(min_x) + dst.GetWidth() * UInt(min_y)]) : nullptr;
+
+	for (int y = min_y; y <= max_y; y += SIMD_Y_TILE) {
+
+		WideSInt w0 = w0_y;
+		WideSInt w1 = w1_y;
+		WideSInt w2 = w2_y;
+
+		WideReal l0 = l0_y;
+		WideReal l1 = l1_y;
+		WideReal l2 = l2_y;
+
+		const float *zr = zread_offset;
+		float       *zw = zwrite_offset;
+
+		for (int x = min_x; x <= max_x; x += SIMD_X_TILE) {
+
+			WideBool fragment_mask = (w0 | w1 | w2) >= 0;
+
+			if (fragment_mask.all_fail() == false) {
+
+				const WideReal sz = WideReal(1.0f) / (waw * l0 + wbw * l1 + wcw * l2);
+				const WideReal dz = (zr) ? *zr : std::numeric_limits<float>::infinity();
+
+				fragment_mask = fragment_mask & (sz <= dz);
+
+				if (fragment_mask.all_fail() == false) {
+					const WideReal L0 = l0 * sz;
+					const WideReal L1 = l1 * sz;
+					const WideReal L2 = l2 * sz;
+					WideColor pixel;
+					for (int i = 0; i < TINY_WIDTH; ++i) {
+						Color o = dst.GetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) });
+						reinterpret_cast<SInt*>(&pixel.r)[i]     = o.r;
+						reinterpret_cast<SInt*>(&pixel.g)[i]     = o.g;
+						reinterpret_cast<SInt*>(&pixel.b)[i]     = o.b;
+						reinterpret_cast<SInt*>(&pixel.blend)[i] = o.blend;
+					}
+
+					fragment_mask = fragment_mask & (pixel.blend != WideSInt(Color::Transparent));
+
+					if (fragment_mask.all_fail() == false) { // use transparency bit as a 1-bit stencil
+
+						WideSInt u = WideSInt(WideReal(a.u) * L0 + WideReal(b.u) * L1 + WideReal(c.u) * L2);
+						WideSInt v = WideSInt(WideReal(a.v) * L0 + WideReal(b.v) * L1 + WideReal(c.v) * L2);
+
+						const WideColor col = {
+							WideSInt(WideReal(a.r) * L0 + WideReal(b.r) * L1 + WideReal(c.r) * L2),
+							WideSInt(WideReal(a.g) * L0 + WideReal(b.g) * L1 + WideReal(c.g) * L2),
+							WideSInt(WideReal(a.b) * L0 + WideReal(b.b) * L1 + WideReal(c.b) * L2),
+							WideSInt(Color::Solid)
+						};
+
+						for (int i = 0; i < TINY_WIDTH; ++i) {
+							const Color texel = (tex) ? tex->GetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&u)[i]), UInt(reinterpret_cast<SInt*>(&v)[i]) }) : Color{ 255, 255, 255, Color::Solid };
+							const Color cx = Color{
+								Byte(reinterpret_cast<const SInt*>(&col.r)[i]),
+								Byte(reinterpret_cast<const SInt*>(&col.g)[i]),
+								Byte(reinterpret_cast<const SInt*>(&col.b)[i]),
+								Color::Solid
+							};
+							switch (texel.blend)
+							{
+							case Color::Solid:
+								dst.SetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }, Dither2x2(texel * cx, UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }));
+								if (zw) {*zw = reinterpret_cast<const float*>(&sz)[i]; }
+								break;
+							case Color::AddAlpha:
+								dst.SetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }, Dither2x2(dst.GetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }) + texel * cx, UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }));
+								break;
+							case Color::Emissive:
+								dst.SetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }, texel);
+								if (zw) { *zw = reinterpret_cast<const float*>(&sz)[i]; }
+								break;
+							case Color::EmissiveAddAlpha:
+								dst.SetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }, Dither2x2(dst.GetColor(UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }) + texel, UPoint{ UInt(reinterpret_cast<SInt*>(&q.x)[i]), UInt(reinterpret_cast<SInt*>(&q.y)[i]) }));
+								break;
+							default: break;
+							}
+						}
+					}
+				}
+			}
+
+			w0 += w0_x_inc;
+			w1 += w1_x_inc;
+			w2 += w2_x_inc;
+
+			l0 += l0_x_inc;
+			l1 += l1_x_inc;
+			l2 += l2_x_inc;
+
+			q.x += TINY_WIDTH;
+
+			if (zr) { zr += TINY_WIDTH; }
+			if (zw) { zw += TINY_WIDTH; }
+		}
+
+		w0_y += w0_y_inc;
+		w1_y += w1_y_inc;
+		w2_y += w2_y_inc;
+
+		l0_y += l0_y_inc;
+		l1_y += l1_y_inc;
+		l2_y += l2_y_inc;
+
+		q.x = p.x;
+		q.y += 1;
+
+		if (zread_offset)  { zread_offset  += dst.GetWidth(); }
+		if (zwrite_offset) { zwrite_offset += dst.GetWidth(); }
+	}
+}
+
 void tiny3d::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
 {
 	internal_impl::DrawTriangle(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), ToI(c, tex), tex, dst_rect);
+}
+
+void tiny3d::DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect)
+{
+	internal_impl::DrawTriangle_Fast(dst, zread, zwrite, ToI(a, tex), ToI(b, tex), ToI(c, tex), tex, dst_rect);
 }
 
 void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::ILVertex &a, const internal_impl::ILVertex &b, const internal_impl::ILVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect)
@@ -449,11 +637,35 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> 
 					const float L1 = l1 * sz;
 					const float L2 = l2 * sz;
 
-					const Color texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
-					const Color lumel = lightmap.GetColor(Dither2x2(Vector2{ a.lu * L0 + b.lu * L1 + c.lu * L2, a.lv * L0 + b.lv * L1 + c.lv * L2 }, q));
+					const Color   texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
+					const Vector2 luv   = Vector2{ a.lu * L0 + b.lu * L1 + c.lu * L2, a.lv * L0 + b.lv * L1 + c.lv * L2 };
+					const UPoint  lp    = UPoint{ UInt(luv.x), UInt(luv.y) };
+					const Color   lumel = Bilerp(
+						lightmap.GetColor(lp),                     lightmap.GetColor(UPoint{ lp.x+1, lp.y }),
+						lightmap.GetColor(UPoint{ lp.x, lp.y+1 }), lightmap.GetColor(UPoint{ lp.x+1, lp.y+1 }),
+						luv.x - lp.x,
+						luv.y - lp.y
+					);
+//					const Color   lumel = lightmap.GetColor(Dither2x2(Vector2{ a.lu * L0 + b.lu * L1 + c.lu * L2, a.lv * L0 + b.lv * L1 + c.lv * L2 }, q)); // Dithered lightmap (looks terrible)
 
-					dst.SetColor(q, Dither2x2(texel * lumel, q));
-					if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
+					switch (texel.blend)
+					{
+					case Color::Solid:
+						dst.SetColor(q, Dither2x2(texel * lumel, q));
+						if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
+						break;
+					case Color::AddAlpha:
+						dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel * lumel, q));
+						break;
+					case Color::Emissive:
+						dst.SetColor(q, texel);
+						if (zwrite != nullptr) { (*zwrite)[zi] = sz; }
+						break;
+					case Color::EmissiveAddAlpha:
+						dst.SetColor(q, Dither2x2(dst.GetColor(q) + texel, q));
+						break;
+					default: break;
+					}
 				}
 			}
 

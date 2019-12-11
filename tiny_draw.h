@@ -60,6 +60,7 @@ void DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Arr
 //   dst -> The destination color buffer to draw a point to.
 //   zwrite -> The depth buffer to store depth information in. NULL to disable depth write.
 void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
+void DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::Vertex &a, const tiny3d::Vertex &b, const tiny3d::Vertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect = nullptr);
 
 // @algo DrawTriangle
 // @info Draws a lightmap shaded triangle to the destination buffer.
