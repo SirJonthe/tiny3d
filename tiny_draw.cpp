@@ -639,12 +639,12 @@ void internal_impl::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> 
 
 					const Color   texel = (tex != nullptr) ? tex->GetColor(UPoint{ UInt(a.u * L0 + b.u * L1 + c.u * L2), UInt(a.v * L0 + b.v * L1 + c.v * L2) }) : Color{ 255, 255, 255, Color::Solid };
 					const Vector2 luv   = Vector2{ a.lu * L0 + b.lu * L1 + c.lu * L2, a.lv * L0 + b.lv * L1 + c.lv * L2 };
-					const UPoint  lp    = UPoint{ UInt(luv.x), UInt(luv.y) };
+					const UPoint  l00   = UPoint{ UInt(luv.x),   UInt(luv.y) };
 					const Color   lumel = Bilerp(
-						lightmap.GetColor(lp),                     lightmap.GetColor(UPoint{ lp.x+1, lp.y }),
-						lightmap.GetColor(UPoint{ lp.x, lp.y+1 }), lightmap.GetColor(UPoint{ lp.x+1, lp.y+1 }),
-						luv.x - lp.x,
-						luv.y - lp.y
+						lightmap.GetColor(l00),                      lightmap.GetColor(UPoint{ l00.x+1, l00.y }),
+						lightmap.GetColor(UPoint{ l00.x, l00.y+1 }), lightmap.GetColor(UPoint{ l00.x+1, l00.y+1 }),
+						luv.x - l00.x,
+						luv.y - l00.y
 					);
 //					const Color   lumel = lightmap.GetColor(Dither2x2(Vector2{ a.lu * L0 + b.lu * L1 + c.lu * L2, a.lv * L0 + b.lv * L1 + c.lv * L2 }, q)); // Dithered lightmap (looks terrible)
 
@@ -704,7 +704,7 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread,
 // XBM data format
 #define font_width  24
 #define font_height 144
-static const unsigned char font_bits[] = {
+static constexpr unsigned char font_bits[] = {
 	0xff, 0xff, 0xff, 0x7d, 0xbd, 0x06, 0x7d, 0x1d, 0xa4, 0xfd, 0xbf, 0x06,
 	0xff, 0x1f, 0x2c, 0xfd, 0xbf, 0x06, 0xff, 0xff, 0xff, 0x77, 0xdc, 0xef,
 	0xff, 0xde, 0xf7, 0x41, 0xf5, 0xf7, 0x7f, 0xfb, 0xf7, 0x77, 0xf4, 0xef,

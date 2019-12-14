@@ -108,6 +108,16 @@ tiny3d::Color tiny3d::operator/(tiny3d::Color l, tiny3d::Real r)
 	return l;
 }
 
+tiny3d::Color tiny3d::Lerp(tiny3d::Color a, tiny3d::Color b, tiny3d::Real x)
+{
+	return tiny3d::Color{
+		Byte(Clamp(0, Lerp(SInt(a.r), SInt(b.r), x), SInt(TINY3D_BYTE_MAX))),
+		Byte(Clamp(0, Lerp(SInt(a.g), SInt(b.g), x), SInt(TINY3D_BYTE_MAX))),
+		Byte(Clamp(0, Lerp(SInt(a.b), SInt(b.b), x), SInt(TINY3D_BYTE_MAX))),
+		a.blend
+	};
+}
+
 tiny3d::Color tiny3d::Dither2x2(tiny3d::Color c, tiny3d::UPoint p)
 {
 	return Dither(c, p, D2x2, 2);

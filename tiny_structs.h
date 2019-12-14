@@ -72,6 +72,8 @@ Color operator*(Color l, Color r);
 Color operator*(Color l, Real r);
 Color operator/(Color l, Real r);
 
+Color Lerp(Color a, Color b, Real x);
+
 // @algo Dither2x2
 // @info Downsamples a 32-bit color to a 16-bit boundary based on where on the destination buffer the color is to be rendered. Used to improve quantization artifacts. 2x2 dither kernel.
 // @in
