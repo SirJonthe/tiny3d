@@ -162,6 +162,11 @@ tiny3d::Byte tiny3d::Illum(tiny3d::Color c)
 	const UInt b = UInt(c.b);
 	const UInt gray = (r + g + b) / 10;
 	return Byte(gray);
+
+	// Faster implementation:
+	// return (R+R+B+G+G+G)/6;
+	// or
+	// return (R+R+R+B+G+G+G+G)>>3;
 }
 
 tiny3d::Color tiny3d::Decode(tiny3d::UHInt c)
