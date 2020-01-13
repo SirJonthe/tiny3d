@@ -12,6 +12,7 @@ namespace tiny3d
 class Texture
 {
 private:
+	// NOTE: CCC = Color Cell Compression
 	struct CCCBlock
 	{
 		tiny3d::UHInt color_idx; // bit field
