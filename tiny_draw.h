@@ -89,8 +89,14 @@ void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d:
 //   dst -> The destination color buffer to draw a point to.
 tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SInt x_margin, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect = nullptr);
 
-	
-//void DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect);
+// @algo DrawRegion
+// @info Transfers a source region to a destination region. Rescales source region to fit destination region.
+// @in
+//   dst -> The target/destination image buffer.
+//   dst_rect -> The target/destination region.
+//   src -> The source image buffer.
+//   src_rect -> The source region.
+void DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect);
 
 }
 

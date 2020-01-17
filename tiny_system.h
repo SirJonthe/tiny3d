@@ -34,21 +34,6 @@ typedef uint16_t UHInt;
 typedef int16_t  SHInt;
 typedef uint8_t  Byte;
 
-/*namespace System
-{
-	bool         Init(tiny3d::UInt width, tiny3d::UInt height, const std::string &caption);
-	void         Close( void );
-	tiny3d::Real Time( void );
-
-	namespace Video
-	{
-		void Blit(const Image &src, const URect *dst_rect = nullptr);
-		void Update(const URect *dst_rect = nullptr);
-		tiny3d::UInt Width( void );
-		tiny3d::UInt Height( void );
-	}
-};*/
-
 }
 
 // @data TINY3D_BITS_PER_BYTE
