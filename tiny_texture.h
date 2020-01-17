@@ -2,6 +2,7 @@
 #define TINY_TEXTURE_H
 
 #include "tiny_system.h"
+#include "tiny_image.h"
 #include "tiny_structs.h"
 
 namespace tiny3d
