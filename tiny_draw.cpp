@@ -873,8 +873,9 @@ void tiny3d::DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d:
 	for (UInt y = 0; y < UInt(MAXY); ++y){
 		float u = u1;
 		for (UInt x = 0; x < UInt(MAXX); ++x){
-			Color c = src.GetColor(UPoint{UInt(u * src.GetWidth()), UInt(v * src.GetHeight())});
-			if (c.blend == Color::Solid) {
+			const Color c = src.GetColor(UPoint{UInt(u * src.GetWidth()), UInt(v * src.GetHeight())});
+			const UPoint p = { x, y };
+			if ((c.blend & dst.GetStencil(p)) > 0) {
 				dst.SetColor(UPoint{x,y}, c);
 			}
 			u += du;
