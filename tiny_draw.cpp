@@ -14,6 +14,10 @@ namespace internal_impl
 		float w;       // 1/z
 	};
 
+	IVertex operator+(IVertex a, IVertex b) { return IVertex{ { a.p.x + b.p.x, a.p.y + b.p.y }, a.u + b.u, a.v + b.v, a.r + b.r, a.g + b.g, a.b + b.b, a.w + b.w }; }
+	IVertex operator-(IVertex a, IVertex b) { return IVertex{ { a.p.x - b.p.x, a.p.y - b.p.y }, a.u - b.u, a.v - b.v, a.r - b.r, a.g - b.g, a.b - b.b, a.w - b.w }; }
+	IVertex operator*(IVertex a, Real b)    { return IVertex{ { SInt(a.p.x * b), SInt(a.p.y * b) }, a.u * b, a.v * b, a.r * b, a.g * b, a.b * b, a.w * b }; }
+
 	struct ILVertex
 	{
 		Point p;
@@ -124,6 +128,17 @@ void internal_impl::DrawLine(tiny3d::Image &dst, const tiny3d::Array<float> *zre
 		min_x = tiny3d::Max(min_x, SInt(dst_rect->a.x));
 		max_x = tiny3d::Min(max_x, SInt(dst_rect->b.x) - 1);
 	}
+
+	// NOTE: Discard or clip lines.
+	// BUG: Clipping is off by a few pixels here and there at times.
+	if (a.p.x > b.p.x) { tiny3d::Swap(a, b); }
+	if (a.p.x > max_x || b.p.x < min_x) { return; }
+	if (a.p.x <  min_x && b.p.x >= min_x) { a = tiny3d::Lerp(a, b, Real(min_x - a.p.x) / Real(b.p.x - a.p.x)); } // NOTE: Line is clipping left border -> Clip and store in A.
+	if (a.p.x <= max_x && b.p.x >  max_x) { b = tiny3d::Lerp(a, b, Real(max_x - a.p.x) / Real(b.p.x - a.p.x)); } // NOTE: Line is clipping right border -> Clip and store in B.
+	if (a.p.y > b.p.y) { tiny3d::Swap(a, b); }
+	if (a.p.y > max_y || b.p.y < min_y) { return; }
+	if (a.p.y <  min_y && b.p.y >= min_y) { a = tiny3d::Lerp(a, b, Real(min_y - a.p.y) / Real(b.p.y - a.p.y)); } // NOTE: Line is clipping upper border -> Clip and store in A.
+	if (a.p.y <= max_y && b.p.y >  max_y) { b = tiny3d::Lerp(a, b, Real(max_y - a.p.y) / Real(b.p.y - a.p.y)); } // NOTE: Line is clipping lower border -> Clip and store in B.
 
 	const SInt dx = b.p.x - a.p.x;
 	const SInt dy = b.p.y - a.p.y;
