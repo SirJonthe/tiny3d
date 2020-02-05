@@ -1,6 +1,7 @@
 #include "tiny_draw.h"
 #include "tiny_math.h"
 #include "tiny_simd.h"
+#include "tiny_overlay.h"
 
 using namespace tiny3d;
 
@@ -30,6 +31,8 @@ namespace internal_impl
 	void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::IVertex &a, const internal_impl::IVertex &b, const internal_impl::IVertex &c, const tiny3d::Texture *tex, const tiny3d::URect *dst_rect);
 	void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const internal_impl::ILVertex &a, const internal_impl::ILVertex &b, const internal_impl::ILVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect);
+	template < typename src_t >
+	void DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_region, const src_t &src, tiny3d::Rect src_region, const tiny3d::URect *dst_rect);
 	tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect);
 }
 
@@ -708,6 +711,92 @@ void tiny3d::DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread,
 	internal_impl::DrawTriangle(dst, zread, zwrite, ToI(a, tex, lightmap), ToI(b, tex, lightmap), ToI(c, tex, lightmap), tex, lightmap, dst_rect);
 }
 
+template < typename src_t >
+void internal_impl::DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_region, const src_t &src, tiny3d::Rect src_region, const tiny3d::URect *dst_rect)
+{
+	// TODO: u and v do not have to be unit scaled, which saves two multiplications and two int->float conversions per pixel.
+	// TODO: Change to fixed point rendering.
+	tiny3d::URect DstRect = (dst_rect != nullptr) ? *dst_rect : tiny3d::URect{ tiny3d::UPoint{ 0,0 }, tiny3d::UPoint{ dst.GetWidth(), dst.GetHeight() } };
+
+	// NOTE: Clip src_region against max borders
+	src_region.a.x = 0 > src_region.a.x ? 0 : src_region.a.x;
+	src_region.a.y = 0 > src_region.a.y ? 0 : src_region.a.y;
+	src_region.b.x = SInt(src.GetWidth()) < src_region.b.x ? src.GetWidth() : src_region.b.x;
+	src_region.b.y = SInt(src.GetHeight()) < src_region.b.y ? src.GetHeight() : src_region.b.y;
+
+	Real u1 = Real(src_region.a.x) / Real(src.GetWidth());
+	Real v1 = Real(src_region.a.y) / Real(src.GetHeight());
+	Real u2 = Real(src_region.b.x) / Real(src.GetWidth());
+	Real v2 = Real(src_region.b.y) / Real(src.GetHeight());
+	Real du = (u2 - u1) / (Real)(dst_region.b.x - dst_region.a.x + 1); // NOTE: Iterate over one more than the actual destination region to render the last pixel in the source region without accessing source out of bounds.
+	Real dv = (v2 - v1) / (Real)(dst_region.b.y - dst_region.a.y + 1);
+
+	// NOTE: Enable a negative writable area on dst (flips blit direction).
+	if (dst_region.b.x < dst_region.a.x) {
+		tiny3d::Swap(dst_region.a.x, dst_region.b.x);
+		tiny3d::Swap(u1, v1);
+		if (dst_region.a.x < 0) { // NOTE: Make read offset for src + clip against min borders.
+			u1 = u1 - du * dst_region.a.x;
+			dst_region.a.x = 0;
+		}
+	} else if (dst_region.a.x < 0) { // NOTE: Make read offset for src + clip against min borders.
+		u1 = u1 + du * -dst_region.a.x;
+		dst_region.a.x = 0;
+	}
+	if (dst_region.b.y < dst_region.a.y) {
+		tiny3d::Swap(dst_region.a.y, dst_region.b.y);
+		tiny3d::Swap(v1, v2);
+		if (dst_region.a.y < 0) { // NOTE: Make read offset for src + clip against min borders.
+			v1 = v1 - dv * dst_region.a.y;
+			dst_region.a.y = 0;
+		}
+	} else if (dst_region.a.y < 0) { // NOTE: Make read offset for src + clip against min borders.
+		v1 = v1 + dv * -dst_region.a.y;
+		dst_region.a.y = 0;
+	}
+
+	// NOTE: Clip dst_region agains max borders.
+	dst_region.b.x = SInt(dst.GetWidth()) < dst_region.b.x ? dst.GetWidth() : dst_region.b.x;
+	dst_region.b.y = SInt(dst.GetHeight()) < dst_region.b.y ? dst.GetHeight() : dst_region.b.y;
+
+	DstRect.a = tiny3d::UPoint{
+		tiny3d::Max(DstRect.a.x, UInt(dst_region.a.x)),
+		tiny3d::Max(DstRect.a.y, UInt(dst_region.a.y))
+	};
+	DstRect.b = tiny3d::UPoint{
+		tiny3d::Min(DstRect.b.x, UInt(dst_region.b.x)),
+		tiny3d::Min(DstRect.b.y, UInt(dst_region.b.y))
+	};
+
+	// NOTE: Determine writable area.
+	const SInt MAXY = DstRect.b.y - DstRect.a.y;
+	const SInt MAXX = DstRect.b.x - DstRect.a.x;
+	if (MAXX < 0 || MAXY < 0) { return; } // readable area is negative (probably because src is offscreen)
+
+	u1 += du * (DstRect.a.x - dst_region.a.x);
+	v1 += dv * (DstRect.a.y - dst_region.a.y);
+
+	// NOTE: Draw scaled scanlines.
+	Real v = v1;
+	for (UInt y = 0; y < UInt(MAXY); ++y){
+		Real u = u1;
+		for (UInt x = 0; x < UInt(MAXX); ++x){
+			const Color c = src.GetColor(UPoint{UInt(u * src.GetWidth()), UInt(v * src.GetHeight())});
+			const UPoint p = { x, y };
+			if ((c.blend & dst.GetStencil(p)) > 0) {
+				dst.SetColor(UPoint{x,y}, c);
+			}
+			u += du;
+		}
+		v += dv;
+	}
+}
+
+void tiny3d::DrawRegion(Image &dst, Rect dst_region, const Overlay &src, Rect src_region, URect *dst_rect)
+{
+	internal_impl::DrawRegion(dst, dst_region, src, src_region, dst_rect);
+}
+
 #define font_char_px_width  TINY3D_CHAR_WIDTH
 #define font_char_px_height TINY3D_CHAR_HEIGHT
 #define font_char_first     TINY3D_CHAR_FIRST
@@ -814,6 +903,7 @@ tiny3d::Point internal_impl::DrawChars(tiny3d::Image &dst, tiny3d::Point p, cons
 
 tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SInt x_margin, const char *ch, tiny3d::UInt ch_num, tiny3d::Color color, tiny3d::UInt scale, const tiny3d::URect *dst_rect)
 {
+	if (scale <= 0) { return p; }
 	if (ch_num > 0) {
 		UInt start = 0;
 		UInt end = 0;
@@ -832,69 +922,7 @@ tiny3d::Point tiny3d::DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SIn
 	return p;
 }
 
-void tiny3d::DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect)
+void tiny3d::DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_region, const tiny3d::Image &src, tiny3d::Rect src_region, tiny3d::URect *dst_rect)
 {
-	// TODO: u and v do not have to be unit scaled, which saves two multiplications and two int->float conversions per pixel.
-	// TODO: Change to fixed point rendering.
-
-	// NOTE: Clip src_rect against max borders
-	src_rect.a.x = 0 > src_rect.a.x ? 0 : src_rect.a.x;
-	src_rect.a.y = 0 > src_rect.a.y ? 0 : src_rect.a.y;
-	src_rect.b.x = SInt(src.GetWidth()) < src_rect.b.x ? src.GetWidth() : src_rect.b.x;
-	src_rect.b.y = SInt(src.GetHeight()) < src_rect.b.y ? src.GetHeight() : src_rect.b.y;
-
-	Real u1 = Real(src_rect.a.x) / Real(src.GetWidth());
-	Real v1 = Real(src_rect.a.y) / Real(src.GetHeight());
-	Real u2 = Real(src_rect.b.x) / Real(src.GetWidth());
-	Real v2 = Real(src_rect.b.y) / Real(src.GetHeight());
-	Real du = (u2 - u1) / (Real)(dst_rect.b.x - dst_rect.a.x + 1); // NOTE: Iterate over one more than the actual destination region to render the last pixel in the source region without accessing source out of bounds.
-	Real dv = (v2 - v1) / (Real)(dst_rect.b.y - dst_rect.a.y + 1);
-
-	// NOTE: Enable a negative writable area on dst (flips blit direction).
-	if (dst_rect.b.x < dst_rect.a.x) {
-		tiny3d::Swap(dst_rect.a.x, dst_rect.b.x);
-		tiny3d::Swap(u1, v1);
-		if (dst_rect.a.x < 0) { // NOTE: Make read offset for src + clip against min borders.
-			u1 = u1 - du * dst_rect.a.x;
-			dst_rect.a.x = 0;
-		}
-	} else if (dst_rect.a.x < 0) { // NOTE: Make read offset for src + clip against min borders.
-		u1 = u1 + du * -dst_rect.a.x;
-		dst_rect.a.x = 0;
-	}
-	if (dst_rect.b.y < dst_rect.a.y) {
-		tiny3d::Swap(dst_rect.a.y, dst_rect.b.y);
-		tiny3d::Swap(v1, v2);
-		if (dst_rect.a.y < 0) { // NOTE: Make read offset for src + clip against min borders.
-			v1 = v1 - dv * dst_rect.a.y;
-			dst_rect.a.y = 0;
-		}
-	} else if (dst_rect.a.y < 0) { // NOTE: Make read offset for src + clip against min borders.
-		v1 = v1 + dv * -dst_rect.a.y;
-		dst_rect.a.y = 0;
-	}
-
-	// NOTE: Clip dst_rect agains max borders.
-	dst_rect.b.x = SInt(dst.GetWidth()) < dst_rect.b.x ? dst.GetWidth() : dst_rect.b.x;
-	dst_rect.b.y = SInt(dst.GetHeight()) < dst_rect.b.y ? dst.GetHeight() : dst_rect.b.y;
-
-	// NOTE: Determine writable area.
-	const SInt MAXY = dst_rect.b.y -dst_rect.a.y;
-	const SInt MAXX = dst_rect.b.x -dst_rect.a.x;
-	if (MAXX < 0 || MAXY < 0) { return; } // readable area is negative (probably because src is offscreen)
-
-	// NOTE: Draw scaled scanlines.
-	Real v = v1;
-	for (UInt y = 0; y < UInt(MAXY); ++y){
-		float u = u1;
-		for (UInt x = 0; x < UInt(MAXX); ++x){
-			const Color c = src.GetColor(UPoint{UInt(u * src.GetWidth()), UInt(v * src.GetHeight())});
-			const UPoint p = { x, y };
-			if ((c.blend & dst.GetStencil(p)) > 0) {
-				dst.SetColor(UPoint{x,y}, c);
-			}
-			u += du;
-		}
-		v += dv;
-	}
+	internal_impl::DrawRegion(dst, dst_region, src, src_region, dst_rect);
 }

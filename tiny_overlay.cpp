@@ -135,7 +135,7 @@ tiny3d::UInt tiny3d::Overlay::GetHeight( void ) const
 	return m_height;
 }
 
-tiny3d::Color tiny3d::Overlay::GetBit(tiny3d::UPoint p) const
+bool tiny3d::Overlay::GetBit(tiny3d::UPoint p) const
 {
 	TINY3D_ASSERT(p.x < m_width && p.y < m_height);
 	const tiny3d::UInt X = p.x / BitCount;
@@ -192,15 +192,15 @@ tiny3d::Color tiny3d::Overlay::GetColor1( void ) const
 
 void tiny3d::Overlay::FlipX( void )
 {
-	const tiny3d::HalfWidth = m_width / 2;
+	const tiny3d::UInt HalfWidth = m_width / 2;
 	for (tiny3d::UInt y = 0; y < m_height; ++y) {
 		for (tiny3d::UInt x = 0; x < HalfWidth; ++x) {
-			const tiny3d::UPoint p0 = tiny3d::UPoint{ p.x, p.y };
-			const tiny3d::UPoint p1 = tiny3d::UPoint{ m_width - p.x - 1, p.y };
+			const tiny3d::UPoint p0 = tiny3d::UPoint{ x, y };
+			const tiny3d::UPoint p1 = tiny3d::UPoint{ m_width - x - 1, y };
 			const bool x0 = GetBit(p0);
 			const bool x1 = GetBit(p1);
-			SetColor(p0, x1);
-			SetColor(p1, x0);
+			SetBit(p0, x1);
+			SetBit(p1, x0);
 		}
 	}
 }

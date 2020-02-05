@@ -5,6 +5,7 @@
 #include "tiny_image.h"
 #include "tiny_texture.h"
 #include "tiny_structs.h"
+#include "tiny_overlay.h"
 
 // @data TINY3D_CHAR_WIDTH
 // @info The width in pixels of a character in the built-in system font.
@@ -75,6 +76,16 @@ void DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, ti
 //   zwrite -> The depth buffer to store depth information in. NULL to disable depth write.
 void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::LVertex &a, const tiny3d::LVertex &b, const tiny3d::LVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect = nullptr);
 
+// @algo DrawRegion
+// @info Transfers a source region to a destination region. Rescales source region to fit destination region.
+// @in
+//   dst -> The target/destination image buffer.
+//   dst_region -> The target/destination region.
+//   src -> The source overlay.
+//   src_region -> The source region.
+//   dst_rect -> The mask rectangle. Discards rendering outside of the given bounds. NULL for full screen.
+void DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_region, const tiny3d::Overlay &src, tiny3d::Rect src_region, tiny3d::URect *dst_rect = nullptr);
+
 // @algo DrawChars
 // @info Draws a series of characters to the destination buffer using the built-in system font.
 // @in
@@ -93,10 +104,11 @@ tiny3d::Point DrawChars(tiny3d::Image &dst, tiny3d::Point p, tiny3d::SInt x_marg
 // @info Transfers a source region to a destination region. Rescales source region to fit destination region.
 // @in
 //   dst -> The target/destination image buffer.
-//   dst_rect -> The target/destination region.
+//   dst_region -> The target/destination region.
 //   src -> The source image buffer.
-//   src_rect -> The source region.
-void DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_rect, const tiny3d::Image &src, tiny3d::Rect src_rect);
+//   src_region -> The source region.
+//   dst_rect -> The mask rectangle. Discards rendering outside of the given bounds. NULL for full screen.
+void DrawRegion(tiny3d::Image &dst, tiny3d::Rect dst_region, const tiny3d::Image &src, tiny3d::Rect src_region, tiny3d::URect *dst_rect = nullptr);
 
 }
 
