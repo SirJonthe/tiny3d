@@ -327,7 +327,7 @@ SInt  Floor(Real r);
 //   a, b -> The end points.
 //   x -> The interpolant.
 // @out The interpolated value.
-template < typename type_t > type_t Lerp(const type_t &a, const type_t &b, Real x) { return a + (b - a) * x; }
+template < typename type_t, typename real_t > type_t Lerp(const type_t &a, const type_t &b, const real_t &x) { return a + (b - a) * x; }
 
 // @algo Bilerp
 // @info Does bilinear interpolation between four values.
@@ -337,7 +337,7 @@ template < typename type_t > type_t Lerp(const type_t &a, const type_t &b, Real 
 //  x -> Horizontal interpolant.
 //  y -> Vertical interpolant.
 // @out The interpolated value.
-template < typename type_t > type_t Bilerp(const type_t &aa, const type_t &ab, const type_t &ba, const type_t &bb, Real x, Real y)
+template < typename type_t, typename real_t > type_t Bilerp(const type_t &aa, const type_t &ab, const type_t &ba, const type_t &bb, const real_t &x, const real_t &y)
 {
 	return Lerp(
 		Lerp(aa, ab, x),

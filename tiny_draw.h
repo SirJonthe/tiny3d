@@ -75,6 +75,7 @@ void DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, ti
 //   dst -> The destination color buffer to draw a point to.
 //   zwrite -> The depth buffer to store depth information in. NULL to disable depth write.
 void DrawTriangle(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::LVertex &a, const tiny3d::LVertex &b, const tiny3d::LVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect = nullptr);
+void DrawTriangle_Fast(tiny3d::Image &dst, const tiny3d::Array<float> *zread, tiny3d::Array<float> *zwrite, const tiny3d::LVertex &a, const tiny3d::LVertex &b, const tiny3d::LVertex &c, const tiny3d::Texture *tex, const tiny3d::Texture &lightmap, const tiny3d::URect *dst_rect = nullptr);
 
 // @algo DrawRegion
 // @info Transfers a source region to a destination region. Rescales source region to fit destination region.
