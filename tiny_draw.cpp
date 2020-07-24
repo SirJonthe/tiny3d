@@ -1117,8 +1117,8 @@ tiny3d::Point internal_impl::DrawChars(tiny3d::Image &dst, tiny3d::Point p, cons
 	Point b = Point{ a.x + scaled_font_width * SInt(ch_num), a.y + scaled_font_height };
 	if (b.x < SInt(rect.a.x) || b.y < SInt(rect.a.y)) { return out_p; }
 
-	UPoint A = { Max(UInt(a.x), rect.a.x), Max(UInt(a.y), rect.a.y) };
-	UPoint B = { Min(UInt(b.x), rect.b.x), Min(UInt(b.y), rect.b.y) };
+	UPoint A = { UInt(Max(a.x, SInt(rect.a.x))), UInt(Max(a.y, SInt(rect.a.y))) };
+	UPoint B = { UInt(Min(b.x, SInt(rect.b.x))), UInt(Min(b.y, SInt(rect.b.y))) };
 
 	for (UInt y = A.y; y < B.y; ++y) {
 		for (UInt x = A.x; x < B.x; ++x) {
