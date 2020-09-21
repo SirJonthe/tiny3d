@@ -200,3 +200,32 @@ tiny3d::UHInt tiny3d::Encode(tiny3d::Color c)
 	const UHInt pixel = UHInt(stencil) | UHInt(b << 10) | UHInt(g << 5) | UHInt(r);
 	return pixel;
 }
+
+tiny3d::Color tiny3d::Decode565(tiny3d::UHInt c)
+{
+	// bits = BBBBB GGGGGG RRRRR
+	constexpr UInt FIX_SCALAR_RB = (256<<8) / 31; // NOTE: should be 255 instead of 256, but then rounding errors will cause 31 to be translated to 254 - HOWEVER, if scalar is a floating point type, then use 255
+	constexpr UInt FIX_SCALAR_G  = (256<<8) / 63;
+	const UInt c32 = UInt(c);
+	const UInt r = ((c32 & 0x001F) * FIX_SCALAR_RB) >> 8; // 0+8=8
+	const UInt g = (((c32 & 0x07E0) * FIX_SCALAR_G) >> 13); // 5+8=13
+	const UInt b = (((c32 & 0xF800) * FIX_SCALAR_RB) >> 19); // 11+8=19
+	Color color;
+	color.r = Byte(r);
+	color.g = Byte(g);
+	color.b = Byte(b);
+	color.blend = Color::Solid;
+	return color;
+}
+
+tiny3d::UHInt Encode565(Color c)
+{
+	// bits = BBBBB GGGGGG RRRRR
+	constexpr UInt FIX_SCALAR_RB = (32<<8) / 255; // NOTE: should be 31 instead of 32, but then rounding errors will cause 255 to be translated to 30 - HOWEVER, if scalar is a floating point type, then use 31
+	constexpr UInt FIX_SCALAR_G  = (64<<8) / 255;
+	const UInt r = (UInt(c.r) * FIX_SCALAR_RB) >> 8;
+	const UInt g = (UInt(c.g) * FIX_SCALAR_G)  >> 8;
+	const UInt b = (UInt(c.b) * FIX_SCALAR_RB) >> 8;
+	const UHInt pixel = UHInt(b << 11) | UHInt(g << 5) | UHInt(r);
+	return pixel;
+}
