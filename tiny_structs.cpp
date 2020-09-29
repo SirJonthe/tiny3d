@@ -218,7 +218,7 @@ tiny3d::Color tiny3d::Decode565(tiny3d::UHInt c)
 	return color;
 }
 
-tiny3d::UHInt Encode565(Color c)
+tiny3d::UHInt tiny3d::Encode565(Color c)
 {
 	// bits = BBBBB GGGGGG RRRRR
 	constexpr UInt FIX_SCALAR_RB = (32<<8) / 255; // NOTE: should be 31 instead of 32, but then rounding errors will cause 255 to be translated to 30 - HOWEVER, if scalar is a floating point type, then use 31

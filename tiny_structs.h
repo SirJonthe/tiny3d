@@ -135,13 +135,13 @@ UHInt Encode(Color c);
 // @info Decodes a 16-bit color into a 32-bit color RGB565 format.
 // @in c -> The 16-bit color in 565 format.
 // @out the decoded 32-bit color.
-Color Decode565(UHInt c)
+Color Decode565(UHInt c);
 
 // @algo Encode565
 // @info Encodes a 32-bit color into a 16-bit color RGB565 format.
 // @in c -> The 32-bit color.
 // @out The 16-bit color in 565 format.
-UHInt Encode565(Color c)
+UHInt Encode565(Color c);
 
 // @data Vertex
 // @info Contains information the rendering API interpolates and uses to determine final color of a pixel.
